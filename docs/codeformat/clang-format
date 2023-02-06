@@ -1,0 +1,30 @@
+---
+BasedOnStyle: Google
+AccessModifierOffset: "-4"
+AlignArrayOfStructures: Left
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+BitFieldColonSpacing: After
+BraceWrapping:
+  IndentBraces: true
+CompactNamespaces: "false"
+FixNamespaceComments: "true"
+IndentWidth: "4"
+PackConstructorInitializers: BinPack
+PenaltyBreakBeforeFirstCallParameter: "120"
+PenaltyReturnTypeOnItsOwnLine: 250
+ReferenceAlignment: Right
+ReflowComments: false
+SpaceAfterCStyleCast: "false"
+SpaceBeforeAssignmentOperators: "true"
+SpaceBeforeParens: Never
+SpaceBeforeParensOptions:
+  AfterOverloadedOperator: true
+SpaceBeforeRangeBasedForLoopColon: "false"
+SpaceInEmptyParentheses: "false"
+SpacesBeforeTrailingComments: "1"
+SpacesInParentheses: "false"
+SpacesInSquareBrackets: "false"
+Standard: c++17
+TabWidth: "4"

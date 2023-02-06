@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/veqtor">
+        <file>Veqtor.qml</file>
+        <file>qmldir</file>
+        <file>script.js</file>
+    </qresource>
+</RCC>

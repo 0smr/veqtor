@@ -1,0 +1,6 @@
+module Hive
+typeinfo hive.qmltypes
+
+Script 0.1 script.js
+
+# Veqtor 0.1 Veqtor.qml
