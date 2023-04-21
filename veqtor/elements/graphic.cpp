@@ -5,6 +5,7 @@ namespace veqtor::elements {
 
 graphic::graphic(const shape_sptr &sh, QObject *parent, const QMap<QString, QString> &attrs)
     : element{parent, tools::filter(attrs, mainAttrs())}, mShape(sh) {
+    mShape->setTransform(&mTransformBuff);
     mShape->setPen(core::nanoPen{
         svgTools::normColor(attrs["fill"]).rgba(),
         svgTools::normColor(attrs["stroke"]).rgba(),

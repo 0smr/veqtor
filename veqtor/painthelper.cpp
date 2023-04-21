@@ -3,13 +3,14 @@
 namespace veqtor::canvas {
 paintHelper::paintHelper() {}
 
-void paintHelper::drawShape(QNanoPainter *painter, const std::shared_ptr<shapes::shape> &shape, const core::nanoPen &pen) {
+void paintHelper::drawShape(QNanoPainter *painter,
+                            const std::shared_ptr<shapes::shape> &shape,
+                            const core::nanoPen &pen, const QTransform &rootTransform) {
     if(shape && !shape->isNull() && pen.visible()) {
         if(shape->type()) {
             pen.setToPainter(painter);
             painter->resetTransform();
-            painter->transform(globalTransform);
-            painter->transform(shape->transform());
+            painter->transform(rootTransform * shape->transformer());
             painter->beginPath();
         }
 

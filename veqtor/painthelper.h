@@ -16,7 +16,6 @@
 namespace veqtor::canvas {
 class paintHelper {
 public:
-    inline static QTransform globalTransform = QTransform();
     paintHelper();
 
     /**
@@ -26,7 +25,10 @@ public:
      * @brief drawShape
      * Draw shapes based on their types.
      */
-    static void drawShape(QNanoPainter *painter, const std::shared_ptr<shapes::shape> &shape, const core::nanoPen &pen);
+    static void drawShape(QNanoPainter *painter,
+                          const std::shared_ptr<shapes::shape> &shape,
+                          const core::nanoPen &pen,
+                          const QTransform &rootTransform = QTransform());
 
     /**
      * @param painter

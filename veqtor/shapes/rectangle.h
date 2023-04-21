@@ -17,7 +17,7 @@ public:
         : rect(QRectF(topLeft, bottomRight), pen) {}
 
     operator path() const {
-        path path(mPen);
+        path ps(mPen);
 
         const auto &rads = mCornerRadius;
         const apoint bb[] = {
@@ -28,14 +28,13 @@ public:
         };
         /**
          *  Position anchros depend on corner radiuses.
-         *  FIXME: set corners handlers.
          *    ╭─p1───p2─╮
          *   p0 r0   r1 p3
          *    │    ∙    │
          *   p7 r3   r2 p4
          *    ╰─p6───p5─╯
          */
-        path.setPathData({
+        ps.setPathData({
             {bb[0].plus(0, rads[0]), pd::move{}},
             {bb[0].plus(rads[0], 0), pd::qubic{bb[0]}},
             {bb[1].sub (rads[1], 0), pd::line{}},
@@ -47,10 +46,10 @@ public:
             {bb[0], pd::line{}},
             pd::close{},
         });
-        path.setAngle(this->angle());
-        path.applyTransform();
+        ps.setTransform(transformer());
+        ps.applyTransform();
 
-        return path;
+        return ps;
     }
 
     const QRectF &updateBoundingBox() override {
@@ -64,7 +63,7 @@ public:
     bool isNull() const override { return QRectF::isNull(); }
 
     PointState contains(const apoint &point) const override {
-        apoint rp = rTransform().map(point);
+        apoint rp = invertTransformer().map(point);
         if(radius() == 0.0f) {
             const float off = 2.0f; ///> 2x offset for edges area.
             bool inside = adjusted(-off, -off, off, off).contains(rp) && mPen.mFill;

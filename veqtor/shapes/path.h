@@ -1,6 +1,7 @@
 #pragma once
 
 #include <limits>
+#include <algorithm>
 
 #include "apoint.h"
 #include "shape.h"
@@ -25,8 +26,27 @@ struct pathdata {
     pathdata(const pd::close& data): relative{}, to{}, data{data} {}
     pathdata(const apoint& point, const path_data& data, bool relative = false)
         : relative{relative}, to{point}, data{data} {}
+    pathdata(char type, const apoint& point, const QVariantMap& vdata, bool relative = false)
+        : relative{relative}, to{point} {
+        switch(std::tolower(type)) {
+        case 'm': data = pd::move{}; break;
+        case 'l': data = pd::line{}; break;
+        case 'v': data = pd::vr{}; break;
+        case 'h': data = pd::hr{}; break;
+        case 'q': data = pd::qubic{vdata["control"].toPointF()}; break;
+        case 'c': data = pd::curve{vdata["control1"].toPointF(), vdata["control2"].toPointF()}; break;
+        case 'a': data = pd::arc{vdata["radius"].toSizeF(), vdata["rotation"].toDouble(),
+                                 vdata["largeArc"].toBool(), vdata["sweepFlag"].toBool()};
+            break;
+        case 'Z': case 'z': default: data = pd::close{};
+        }
+    }
+    pathdata(const QVariantMap &map)
+        : pathdata(map["type"].toChar().toLatin1(), map["to"].toPointF(),
+                   map["data"].toMap(), map["relative"].toBool()) {}
 
     Type type() const { return static_cast<Type>(data.index()); }
+    char typeChar() const { return "zmlvhaqc"[data.index()]; }
 
     bool isVr() const { return data.index() == Vr; }
     bool isHr() const { return data.index() == Hr; }
@@ -40,6 +60,21 @@ struct pathdata {
     pd::curve curve() const { return std::get<pd::curve>(data); }
     pd::qubic qubic() const { return std::get<pd::qubic>(data); }
     pd::arc arc() const { return std::get<pd::arc>(data); }
+
+    QVariantMap map() const {
+        QVariantMap map{{"relative", relative},{"to", to}};
+        if(isCurve()) { map["control"] = QVariantList{{curve().c1, curve().c2}}; }
+        else if(isQubic()) { map["control"] = qubic().control; }
+        else if(isArc()) {
+            map.insert({
+                {"radius",   arc().radius   },
+                {"rotation", arc().rotation },
+                {"sweep",    arc().sweepFlag},
+                {"largeArc", arc().largeArc },
+            });
+        }
+        return map;
+    }
 
     bool relative;
     apoint to;
@@ -80,24 +115,30 @@ public:
         return mBoundingBox;
     }
 
+    void pop() { mPathData.pop_back(); }
+    void leftShift() {
+        std::rotate(mPathData.begin(), mPathData.begin() + 1, mPathData.end());
+        mPathData.resize(mPathData.size() - 1, pd::close{});
+    }
+
     /**
      * @brief applyTransform
      * Sets angle to zero, and changes points and thier controls depend on shape rotation.
      * NOTE: only path can reset it's bounding box (other shapes can't).
      */
     void applyTransform() {
-        if(mAngle != 0) {
+        if(!transformer().isIdentity()) {
             for(pathdata& pdata : mPathData) {
-                pdata.to.transform(transform());
+                pdata.to.transform(transformer());
                 if(pdata.type() == pathdata::Curve) {
-                    std::get<pd::curve>(pdata.data).c1.transform(transform());
-                    std::get<pd::curve>(pdata.data).c2.transform(transform());
+                    std::get<pd::curve>(pdata.data).c1.transform(transformer());
+                    std::get<pd::curve>(pdata.data).c2.transform(transformer());
                 } else if(pdata.type() == pathdata::Qubic) {
-                    std::get<pd::qubic>(pdata.data).control.transform(transform());
+                    std::get<pd::qubic>(pdata.data).control.transform(transformer());
                 }
             }
         }
-        mAngle = 0;
+        setTransform(QTransform());
         updateBoundingBox();
     }
 
@@ -122,6 +163,9 @@ public:
 
     void clear() { mPathData.clear(); }
     void push(const pathdata &l) { mPathData.push_back(l); }
+    void push(char type, QPointF to, const QVariantMap &data, bool relative = false) {
+        mPathData.push_back({type, to, data, relative});
+    }
 
     void vTo(qreal y, bool relative = false);
     void hTo(qreal x, bool relative = false);

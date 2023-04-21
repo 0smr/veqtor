@@ -7,11 +7,7 @@
 #include <qnamespace.h>
 
 #include <QQmlApplicationEngine>
-#include <QLine>
-#include <QPen>
-#include <QPoint>
-#include <QRect>
-#include <QQmlParserStatus>
+#include <QTimer>
 
 #include <array>
 #include <cmath>
@@ -21,6 +17,7 @@
 
 #include "shapes/shapes.h"
 #include "elements/svg.h"
+#include "elements/epath.h"
 
 namespace veqtor::canvas {
 class veqtor : public QNanoQuickItem {
@@ -31,6 +28,7 @@ class veqtor : public QNanoQuickItem {
 
     Q_PROPERTY(QString src READ src WRITE setSrc NOTIFY srcChanged)
     Q_PROPERTY(QVariantMap document READ document NOTIFY documentChanged)
+    Q_PROPERTY(QObject* root READ root NOTIFY rootChanged)
 public:
     /** @brief The Tools enum */
     veqtor(QQuickItem *parent = nullptr);
@@ -42,6 +40,8 @@ public:
     QNanoQuickItemPainter *createItemPainter() const override;
 
     /**
+     * @abstract This function is called whenever the mouse hovers over the component
+     *  and will emit a `hovered` event.
      * @brief hoverMoveEvent
      * @param event
      */
@@ -59,6 +59,8 @@ public:
      */
     void painter(QNanoPainter *painter) const;
 
+    QPointer<elements::svg> root() { return mRoot; }
+
     QString src() const { return mSrc; }
     void setSrc(const QString& src);
 
@@ -68,8 +70,19 @@ public:
         return mDocument[id];
     }
 
-private:
+private slots:
     void setElementsToProperties();
+    void adjustSize();
+    void adjustResponsive();
+    void updateDocument(const QString &newId, const QString &oldId) {
+        /// This feature modifies the main document in the event that the ID of any element is altered.
+        auto sender = qobject_cast<elements::element *>(QObject::sender());
+
+        mDocument.remove(oldId);
+        mDocument.insert(newId, QVariant::fromValue(sender));
+
+        emit documentChanged();
+    }
 
 public slots:
     void update();
@@ -80,16 +93,21 @@ signals:
     void rootChanged();
     void documentChanged();
     void svgLoaded();
-    void hovered(QPointer<elements::element> el);
+    void hovered(QPointer<elements::element> target);
 
 private:
     QPointer<elements::svg> mRoot;
     QVariantMap mDocument;
     QString mSrc;
+
+    QTimer mUpdateTimer;
+    QTransform mAdjustment;
 };
 
 static void registerVeqtorType() {
     qmlRegisterType<veqtor>("veqtor", 0, 1, "Veqtor");
+    qmlRegisterType<elements::svg>("veqtor", 0, 1, "Svg");
+    qmlRegisterType<elements::epath>("veqtor", 0, 1, "Path");
 }
 Q_COREAPP_STARTUP_FUNCTION(registerVeqtorType)
 }

@@ -2,7 +2,7 @@
 
 namespace veqtor::shapes {
 PointState path::contains(const apoint &point) const {
-    apoint ipoint = rTransform().map(point);
+    apoint ipoint = invertTransformer().map(point);
     if(mBoundingBox.contains(ipoint) == false || mPathData.size() < 2) {
         return PointState::None;
     } else {
@@ -32,12 +32,12 @@ PointState path::contains(const apoint &point) const {
 }
 
 void path::vTo(qreal y, bool relative) {
-    mPathData.push_back({rTransform().map(apoint{0.0f, y}), pd::vr{}, relative});
+    mPathData.push_back({invertTransformer().map(apoint{0.0f, y}), pd::vr{}, relative});
     expandBoundigBox(apoint{0.0f, y});
 }
 
 void path::hTo(qreal x, bool relative) {
-    mPathData.push_back({rTransform().map(apoint{x, 0.0f}), pd::hr{}, relative});
+    mPathData.push_back({invertTransformer().map(apoint{x, 0.0f}), pd::hr{}, relative});
     expandBoundigBox(apoint{x, 0.0f});
 }
 
@@ -49,7 +49,7 @@ void path::moveTo(std::vector<double> points, bool relative) {
 }
 
 void path::moveTo(apoint to, bool relative) {
-    mPathData.push_back({rTransform().map(to), pd::move{}, relative});
+    mPathData.push_back({invertTransformer().map(to), pd::move{}, relative});
     expandBoundigBox(to);
 }
 
@@ -60,23 +60,21 @@ void path::lineTo(std::vector<double> points, bool relative) {
 }
 
 void path::lineTo(apoint to, bool relative) {
-    mPathData.push_back({rTransform().map(to), pd::line{}, relative});
+    mPathData.push_back({invertTransformer().map(to), pd::line{}, relative});
     expandBoundigBox(to);
 }
 
 void path::qubicTo(const apoint &control, const apoint &to, bool relative) {
-    mPathData.push_back({
-                         rTransform().map(to),
-                         pd::qubic{rTransform().map(control)},
-        relative
-    });
+    mPathData.push_back({invertTransformer().map(to),
+                         pd::qubic{invertTransformer().map(control)},
+                         relative});
     expandBoundigBox(to);
 }
 
 void path::curveTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative) {
     mPathData.push_back({
-        rTransform().map(to),
-        pd::curve{rTransform().map(c1), rTransform().map(c2)},
+        invertTransformer().map(to),
+        pd::curve{invertTransformer().map(c1), invertTransformer().map(c2)},
         relative
     });
 
@@ -84,7 +82,7 @@ void path::curveTo(const apoint &c1, const apoint &c2, const apoint &to, bool re
 }
 
 void path::arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative) {
-    mPathData.push_back({rTransform().map(to), pd::arc{ radius, xrot, larc, sweep}, relative});
+    mPathData.push_back({invertTransformer().map(to), pd::arc{ radius, xrot, larc, sweep}, relative});
     expandBoundigBox(to);
 }
 

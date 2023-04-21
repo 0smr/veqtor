@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QQmlListProperty>
 
 #include "../shapes/shapes.h"
 #include "element.h"
@@ -11,28 +12,42 @@ using el_ptr = QPointer<element>;
 
 class container: public element {
     Q_OBJECT
+    Q_PROPERTY(QQmlListProperty<element> children READ childrenList NOTIFY childrenListChanged)
 public:
     explicit container(QObject *parent = nullptr,
                        const QMap<QString, QString> &attrs = {},
                        const std::vector<el_ptr> &els = {})
-        : element{parent, attrs}, mElements(els) {}
+        : element{parent, attrs}, mChildren(els.begin(), els.end()) {}
 
     /// operators
-    const el_ptr &operator[](size_t i) const { return mElements[i]; }
-    el_ptr &operator[](size_t i) { return mElements[i]; }
+    const el_ptr &operator[](size_t i) const { return mChildren[i]; }
+    el_ptr &operator[](size_t i) { return mChildren[i]; }
 
+    /// setters
     virtual void push_back(const el_ptr &childElement) {
-        mElements.push_back(childElement);
+        mChildren.push_back(childElement);
     }
 
     /// getters
-    std::vector<el_ptr>::iterator begin() { return mElements.begin(); }
-    std::vector<el_ptr>::iterator end() { return mElements.end(); }
-    std::vector<el_ptr>::const_iterator cbegin() { return mElements.cbegin(); }
-    std::vector<el_ptr>::const_iterator cend() { return mElements.cend(); }
+    QVector<el_ptr>::iterator begin() { return mChildren.begin(); }
+    QVector<el_ptr>::iterator end() { return mChildren.end(); }
+    QVector<el_ptr>::const_iterator cbegin() { return mChildren.cbegin(); }
+    QVector<el_ptr>::const_iterator cend() { return mChildren.cend(); }
 
-    bool empty() { return mElements.empty(); }
-    bool size() { return mElements.size(); }
+    bool empty() { return mChildren.empty(); }
+    int size() { return mChildren.size(); }
+
+    const QQmlListProperty<element> childrenList() {
+        using qq_list_prop = QQmlListProperty<element>;
+        static auto cast = [](qq_list_prop *l){ return reinterpret_cast<QVector<el_ptr>*>(l->data); };
+        static auto repl = [](qq_list_prop *l, int i, element *el){ cast(l)->replace(i, el); };
+        static auto at   = [](qq_list_prop *l, int i){ return cast(l)->at(i).data(); };
+        static auto app  = [](qq_list_prop *l, element *el){ cast(l)->push_back(el); };
+        static auto pop  = [](qq_list_prop *l){ return cast(l)->pop_back(); };
+        static auto clr  = [](qq_list_prop *l){ return cast(l)->clear(); };
+        static auto size = [](qq_list_prop *l){ return cast(l)->size(); };
+        return {this, &mChildren, app, size, at, clr, repl, pop};
+    }
 
     virtual Type type() const override { return element::Container; }
     virtual bool contains(const QPointF& point) const override {
@@ -88,7 +103,8 @@ public:
         }
     }
 signals:
+    void childrenListChanged();
 protected:
-    std::vector<QPointer<element>> mElements;
+    QVector<el_ptr> mChildren;
 };
 }

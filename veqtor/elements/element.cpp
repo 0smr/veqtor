@@ -3,13 +3,15 @@
 #include "element.h"
 #include "container.h"
 #include "graphic.h"
+#include "../utils/csstools.h"
 
 namespace veqtor::elements {
 using utils::tools;
+using utils::cssTools;
 
 element::element(QObject *parent, QMap<QString, QString> attrs)
-    : QObject{parent}, mId(attrs["id"]), mClass{attrs["class"]},
-      mStyle{attrs["style"]}, mTabIndex{attrs["tab-index"].toLongLong()} {
+    : QObject{parent}, mId(attrs["id"]), mClass{attrs["class"].split(" ")},
+    mStyle{cssTools::cssStyleParser(attrs["style"])}, mTabIndex{attrs["tab-index"].toLongLong()} {
 
     auto map = tools::filter(attrs, mainAttrs());
     for(const auto &key: map) {
@@ -33,6 +35,12 @@ void element::setAttribute(const QString &key, const QString &value) {
 
 void element::setAttributes(const QVariantMap &attrs) {
     /// TODO: Use a better method.
+    if(attrs.contains("class")) mClass = attrs["class"].toStringList();
+    if(attrs.contains("class")) mTabIndex = attrs["class"].toLongLong();
+    if(attrs.contains("style")) {
+        mStyle = utils::cssTools::cssStyleParser(attrs["style"].toString());
+    }
+
     auto filtred = tools::filter(attrs, mainAttrs());
 
     for(auto i = filtred.keyValueBegin(); i != filtred.keyValueEnd(); i++) {

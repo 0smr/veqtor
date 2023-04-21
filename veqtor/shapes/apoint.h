@@ -36,7 +36,7 @@ public:
     constexpr apoint(const QPointF& p = QPointF()): QPointF(p) {}
     constexpr apoint(qreal x, qreal y): QPointF(x, y) {}
 
-    const apoint &operator =(const QPointF &in) {
+    apoint &operator =(const QPointF &in) {
         setX(in.x());
         setY(in.y());
         return *this;
@@ -51,13 +51,11 @@ public:
     }
 
     apoint transformed(const QTransform &transform) const {
-        apoint result = transform.map(*this);
-        return result;
+        return transform.map(*this);
     }
 
     const apoint &transform(const QTransform &transform) {
-        *this = transformed(transform);
-        return *this;
+        return (*this = transformed(transform));
     }
 
     apoint &rotate(qreal angle, const apoint &origin = {0, 0}) {

@@ -1,3 +1,8 @@
+#include <QTimer>
+#include <QPointF>
+#include <QLine>
+#include <QFileInfo>
+
 #include "veqtor.h"
 #include "nanopainter.h"
 
@@ -9,7 +14,16 @@
 #include "painthelper.h"
 
 namespace veqtor::canvas {
-veqtor::veqtor(QQuickItem *parent) : QNanoQuickItem(parent) {}
+veqtor::veqtor(QQuickItem *parent) : QNanoQuickItem(parent) {
+    /// This line sets timer values.
+    /// The timer is used to limit the update and paint framerate to 60 FPS.
+    mUpdateTimer.setInterval(1000/60 - 1.5);
+    mUpdateTimer.setSingleShot(true);
+    mUpdateTimer.callOnTimeout(this, &QQuickItem::update);
+
+    connect(this, &veqtor::widthChanged, this, veqtor::adjustResponsive);
+    connect(this, &veqtor::heightChanged, this, veqtor::adjustResponsive);
+}
 
 QNanoQuickItemPainter *veqtor::createItemPainter() const {
     core::nanoPainter *qquickItem = new core::nanoPainter();
@@ -24,6 +38,7 @@ void veqtor::hoverMoveEvent(QHoverEvent* event) {
         QPointF mousePosition = event->posF();
 
         /// Walk through all of the shape element nodes.
+        /// The `any` function acts as a pre-order traversal, going through all the elements.
         /// TODO: Change the traversal type to reversed post-order.
         mRoot->any([&mousePosition, this](const QPointer<element> &el) {
             bool contains = el->contains(mousePosition);
@@ -54,24 +69,15 @@ void veqtor::componentComplete() {
 }
 
 void veqtor::painter(QNanoPainter *painter) const {
+    using elements::element;
+
     if(!mRoot) return;
 
-    using elements::element;
-    paintHelper::globalTransform.reset();
-
-    /// TODO: move this lines to onSourceChanged & onViewBoxChanged, this lines can be calculated ones.
-    if(mRoot->type() == element::SVG && !mRoot->viewBox().isNull()) {
-        /// TODO: Add more scale types.
-        QSizeF size = mRoot->viewBox().size();
-        float scale = std::min({width()/size.width(), height()/size.height()});
-        paintHelper::globalTransform.scale(scale, scale);
-    }
-
     /// Walk through all of the shape element nodes.
-    mRoot->walk([&painter](const QPointer<element> &el) {
+    mRoot->walk([&painter, this](const QPointer<element> &el) {
         if(el->isGraphic()) {
             auto graphic = dynamic_cast<elements::graphic*>(el.data());
-            paintHelper::drawShape(painter, *graphic, graphic->pen());
+            paintHelper::drawShape(painter, *graphic, graphic->pen(), mAdjustment);
         }
     });
 }
@@ -84,9 +90,11 @@ void veqtor::setSrc(const QString &src) {
     QString data = src;
 
     /// If src is file address extract it's data.
-    if(src.size() < 256 && (src.startsWith("qrc") || src.startsWith("file"))) {
-        QString path = src.startsWith("file") ? QUrl{src}.toLocalFile() : QUrl{src}.path();
+    if(src.size() < 256 && !src.trimmed().startsWith("<svg")) {
+        QString path = utils::tools::toValidFilePath(src);
         QFile file(path);
+
+        data.clear();
 
         if(file.open(QFile::ReadOnly)) {
             data = file.readAll();
@@ -95,6 +103,7 @@ void veqtor::setSrc(const QString &src) {
     }
 
     /// Delete old tree
+    /// There is a chance that svgParser return nullptr value, and this would cause
     if(mRoot) mRoot->deleteLater();
     mRoot = nullptr;
 
@@ -103,6 +112,7 @@ void veqtor::setSrc(const QString &src) {
 
     if(root) {
         mRoot = dynamic_cast<elements::svg*>(root.data());
+        mDocument.clear();
         mRoot->walk([this](const QPointer<elements::element>& el) {
             connect(el, &elements::element::updated, this, &veqtor::update);
 
@@ -111,6 +121,9 @@ void veqtor::setSrc(const QString &src) {
             }
         });
 
+        connect(mRoot, &elements::svg::viewBoxChanged, this, &veqtor::adjustSize);
+
+        adjustSize();
         setElementsToProperties();
 
         emit documentChanged();
@@ -123,26 +136,48 @@ void veqtor::setSrc(const QString &src) {
 
 void veqtor::setElementsToProperties() {
     /**
-     * @abstract Set elements to the names of their associated properties depending on their Ids.
+     * @brief Set elements to the names of their associated properties depending on their Ids.
+     *  Put the element pointer into @a evar, and if the element exists,
+     *  assign data from the property with the same name as the element ID to it.
      */
+
     int num = metaObject()->propertyCount();
     for(int i = metaObject()->propertyOffset(); i < num; ++i) {
         QMetaProperty mp = metaObject()->property(i);
         QVariant evar = mDocument[mp.name()];
         auto name = mp.name();
 
-        if((!mp.isWritable() || mp.isConstant()) && evar.isValid()) {
+        if(evar.isValid()) {
             auto eptr = evar.value<elements::element*>();
             if(eptr) eptr->setAttributes(property(name).toMap());
-            setProperty(name, evar);
-
-            qDebug() << name << property(name) << property(name).toMap();
         }
     }
 }
 
+void veqtor::adjustSize() {
+    QRectF viewBox = mRoot->viewBox();
+
+    setImplicitWidth(viewBox.width());
+    setImplicitHeight(viewBox.height());
+    adjustResponsive();
+}
+
+void veqtor::adjustResponsive() {
+    QSizeF size  = mRoot->viewBox().size();
+    float scale  = std::min({width()/size.width(), height()/size.height()});
+    QPointF offset{width() - scale * size.width(), height() - scale * size.height()};
+
+    mAdjustment.reset();
+    /// Move the SVG shape to center of Item.
+    mAdjustment.translate(offset.x()/2, offset.y()/2);
+    /// Scale the SVG shape to fit
+    mAdjustment.scale(scale, scale);
+}
+
 void veqtor::update() {
-    if(isEnabled() == true) { QQuickItem::update(); }
+    if(!mUpdateTimer.isActive() && isEnabled()) {
+        mUpdateTimer.start();
+    }
 }
 
 void veqtor::propertyChanged() {

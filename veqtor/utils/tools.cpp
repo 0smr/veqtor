@@ -1,3 +1,7 @@
+#include <QUrl>
+
+#include <algorithm>
+
 #include "tools.h"
 
 namespace veqtor::utils {
@@ -13,7 +17,7 @@ std::vector<std::string> tools::globalMatch(const std::string &str, const std::r
 std::vector<double> tools::stodVec(const std::vector<std::string> &svec) {
     std::vector<double> dvec;
     std::transform(svec.begin(), svec.end(), std::back_inserter(dvec), [](const std::string& str) {
-        // TODO:: use a faster method.
+        /// TODO: use a faster method.
         try { return std::stod(str); } catch(...) { return 0.0; };
     });
     return dvec;
@@ -25,5 +29,11 @@ QVector<double> tools::stodVec(const QVector<QString> &svec) {
         return str.toDouble();
     });
     return dvec;
+}
+
+QString tools::toValidFilePath(const QString &path) {
+    QString valid = path.startsWith("file:///") ? QUrl{path}.toLocalFile() :
+                    path.startsWith("qrc:/")  ? (":" + QUrl{path}.path()) : path;
+    return valid;
 }
 }

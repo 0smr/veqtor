@@ -2,14 +2,11 @@
 
 #include <QDomDocument>
 #include <QString>
-#include <QColor>
 #include <QMap>
 #include <QList>
-#include <QTransform>
 
-#include <map>
 #include <regex>
-#include <memory>
+#include <string>
 
 namespace veqtor::utils {
 class tools {
@@ -20,6 +17,7 @@ public:
     static std::vector<std::string> globalMatch(const std::string &str, const std::regex &reg);
     static std::vector<double> stodVec(const std::vector<std::string> &svec);
     static QVector<double> stodVec(const QVector<QString> &svec);
+    static QString toValidFilePath(const QString &path);
 };
 
 template<typename _key, typename _value>

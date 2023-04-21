@@ -33,6 +33,7 @@ HEADERS += \
     $$PWD/shapes/rectangle.h \
     $$PWD/shapes/shape.h \
     $$PWD/shapes/shapes.h \
+    $$PWD/utils/csstools.h \
     $$PWD/utils/svgtools.h \
     $$PWD/utils/tools.h \
     $$PWD/veqtor.h \
@@ -50,6 +51,7 @@ SOURCES += \
     $$PWD/shapes/path.cpp \
     $$PWD/shapes/rectangle.cpp \
     $$PWD/shapes/shape.cpp \
+    $$PWD/utils/csstools.cpp \
     $$PWD/utils/svgtools.cpp \
     $$PWD/utils/tools.cpp \
     $$PWD/veqtor.cpp \

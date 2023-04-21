@@ -38,7 +38,7 @@ public:
             pd::close{}
         });
 
-        ps.setAngle(angle());
+        ps.setTransform(transformer());
         ps.applyTransform();
         return ps;
     }
@@ -77,7 +77,7 @@ public:
      * PointState::None If none of the preceding statements are true.
      */
     PointState contains(const apoint &point) const override {
-        apoint rp = rTransform().map(point);
+        apoint rp = invertTransformer().map(point);
         const qreal eeq = std::pow(rp.x() - mCenter.x(), 2) / std::pow(mRadius.width(), 2) +
                           std::pow(rp.y() - mCenter.y(), 2) / std::pow(mRadius.height(), 2);
         return mPen.mFill && eeq <= 0.9 ? PointState::Inside :

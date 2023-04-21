@@ -3,6 +3,8 @@
 #include <memory>
 #include <array>
 
+#include <QPointer>
+
 #include "apoint.h"
 #include "../nanopen.h"
 
@@ -25,30 +27,14 @@ public:
     virtual ~shape() = 0;
 
     shape() = default;
-    shape(const QRectF &rect, const core::nanoPen &pen = core::nanoPen(), float angle = 0.0f)
-        : mBoundingBox(rect), mPen(pen), mAngle(angle) {}
-    shape(const apoint p1, const apoint p2, const core::nanoPen &pen = core::nanoPen(), float angle = 0.0f)
-        : shape(QRectF(p1, p2), pen, angle) {}
-    shape(const QLineF line, const core::nanoPen &pen = core::nanoPen(), float angle = 0.0f)
-        : shape(QRectF(line.p1(), line.p2()), pen, angle) {}
-    shape(const core::nanoPen &pen, float angle = 0.0f)
-        : shape(QRectF(), pen, angle) {}
-
-    QTransform transform() const {
-        apoint c = mBoundingBox.center();
-        return QTransform()
-            .translate(c.x(), c.y())
-            .rotate(mAngle)
-            .translate(-c.x(), -c.y());
-    }
-
-    QTransform rTransform() const {
-        apoint c = mBoundingBox.center();
-        return QTransform()
-            .translate(c.x(), c.y())
-            .rotate(-mAngle)
-            .translate(-c.x(), -c.y());
-    }
+    shape(const QRectF &rect, const core::nanoPen &pen = core::nanoPen())
+        : mBoundingBox(rect), mPen(pen), mTransform{nullptr} {}
+    shape(const apoint p1, const apoint p2, const core::nanoPen &pen = core::nanoPen())
+        : shape(QRectF(p1, p2), pen) {}
+    shape(const QLineF line, const core::nanoPen &pen = core::nanoPen())
+        : shape(QRectF(line.p1(), line.p2()), pen) {}
+    shape(const core::nanoPen &pen)
+        : shape(QRectF(), pen) {}
 
     /**
      * @brief boundingPoints
@@ -68,8 +54,10 @@ public:
             bb.bottomRight(),{bb.center().x(), bb.bottom()},
             bb.bottomLeft(), {bb.left()      , bb.center().y()},
         };
-        QTransform t = transform();
+
+        QTransform t = transformer();
         for(auto &point : boundPoints) point  = t.map(point);
+
         return boundPoints;
     }
 
@@ -78,11 +66,13 @@ public:
     }
 
     /// getters
-    float angle() const { return mAngle; }
-
     const QRectF &boundingBox() const { return mBoundingBox; }
     const core::nanoPen &pen() const { return mPen; }
     core::nanoPen &pen() { return mPen; }
+    QTransform invertTransformer() const { return transformer().inverted(); }
+    QTransform transformer() const {
+        return mTransform ? *mTransform : QTransform();
+    }
 
     virtual float width() const { return mBoundingBox.width(); }
     virtual float height() const { return mBoundingBox.height(); }
@@ -95,7 +85,8 @@ public:
     virtual void setBoundingBox(const QRectF &boundingBox) { mBoundingBox = boundingBox; }
 
     /// setters
-    void setAngle(float newAngle) { mAngle = newAngle; }
+    void setTransform(const QTransform &transform) { *mTransform = transform; }
+    void setTransform(QTransform *transform) { mTransform = transform; }
     void setPen(const core::nanoPen &newPen) { mPen = newPen; }
 
     /// static members
@@ -132,6 +123,6 @@ public:
 protected:
     QRectF mBoundingBox;
     core::nanoPen mPen;
-    float mAngle;
+    QTransform *mTransform;
 };
 }  // namespace veqtor::shape

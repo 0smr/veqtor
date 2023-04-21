@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVariantMap>
 #include <QQmlPropertyMap>
+#include <QQuickTransform>
 
 #include <memory>
 #include <vector>
@@ -17,7 +18,9 @@ namespace veqtor::elements {
 class element : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString id READ id WRITE setId NOTIFY idChanged)
+    Q_PROPERTY(QList<QVariantMap> transform READ transform WRITE setTransform NOTIFY transformChanged)
     Q_PROPERTY(QQmlPropertyMap *attributes READ attributes NOTIFY attributesChanged)
+    Q_PROPERTY(QPointF origin READ origin WRITE setOrigin NOTIFY originChanged)
 public:
     enum Type {
         Unknown = 0x0,
@@ -50,23 +53,69 @@ public:
 
     void setId(const QString &idValue);
     void setAttribute(const QString &key, const QString &value);
+    /**
+     * @brief setAttributes
+     * @param attrs, A map of attributes
+     * @abstract
+     */
     virtual void setAttributes(const QVariantMap &attrs);
+
+    QList<QVariantMap> transform() const { return mTransform; }
+    void setTransform(const QList<QVariantMap> &transforms) {
+        if (mTransform == transforms) return;
+
+        mTransform = transforms;
+        mTransformBuff.reset();
+        mTransformBuff.translate(mOrigin.x(), mOrigin.y());
+
+        for(const auto &t: qAsConst(mTransform)) {
+            if(t["t"] == "rotate") {
+                Qt::Axis axis = t["axis"].isNull() ? Qt::ZAxis : Qt::Axis(t["axis"].toInt());
+                mTransformBuff.rotate(t["angle"].toDouble(), axis);
+            } else if(t["t"] == "scale") {
+                mTransformBuff.scale(t["x"].toDouble(), t["y"].toDouble());
+            } else if(t["t"] == "shear") {
+                mTransformBuff.shear(t["h"].toDouble(), t["v"].toDouble());
+            } else if(t["t"] == "translate") {
+                mTransformBuff.translate(t["x"].toDouble(), t["y"].toDouble());
+            }
+        }
+        mTransformBuff.translate(-mOrigin.x(), -mOrigin.y());
+
+        emit transformChanged();
+        emit updated();
+    }
+
+    QPointF origin() const { return mOrigin; }
+    void setOrigin(QPointF o) {
+        if(mOrigin == o) return;
+        mOrigin = o;
+
+        emit originChanged();
+        emit updated();
+    }
 
 private:
     static QStringList mainAttrs() { return {"id","class","style","tab-index"}; }
+
 signals:
     void updated();
     void idChanged();
     void attributesChanged();
+    void transformChanged();
+    void originChanged();
 
 protected:
     QString mId;
-    QString mClass;
-    QString mStyle;
+    QStringList mClass;
+    QHash<QString, QString> mStyle;
 
-    qint64 mTabIndex;
+    QList<QVariantMap> mTransform;
+    QTransform mTransformBuff;
+    QPointF mOrigin;
+
+    long long mTabIndex;
 
     QQmlPropertyMap mAttributes;
 };
 }
-
