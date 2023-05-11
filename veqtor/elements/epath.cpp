@@ -40,20 +40,20 @@ void epath::setAttributes(const QVariantMap &attrs) {
     graphic::setAttributes(tools::filter(attrs, mainAttrs()));
 }
 
-QVariantMap epath::at(unsigned long long i) const {
+QVariantMap epath::at(size_t index) const {
     auto shape = pathShape();
-    return i < shape->size() ? shape->at(i).map() : QVariantMap();
+    return index < shape->size() ? shape->at(index).map() : QVariantMap();
 }
 
 QVariantMap epath::shift() {
     auto pd = at(0);
     pathShape()->leftShift();
+    emit updated();
     return pd;
 }
 
 void epath::close() {
     pathShape()->close();
-    emit updated();
 }
 
 void epath::vTo(qreal y, bool rel) {
@@ -76,13 +76,13 @@ void epath::lineTo(QPointF to, bool rel) {
     emit updated();
 }
 
-void epath::qubicTo(const QPointF &c, const QPointF &to, bool rel) {
-    pathShape()->qubicTo(c, to, rel);
+void epath::quadTo(const QPointF &c, const QPointF &to, bool rel) {
+    pathShape()->quadTo(c, to, rel);
     emit updated();
 }
 
-void epath::curveTo(const QPointF &c1, const QPointF &c2, const QPointF &to, bool rel) {
-    pathShape()->curveTo(c1, c2, to, rel);
+void epath::cubicTo(const QPointF &c1, const QPointF &c2, const QPointF &to, bool rel) {
+    pathShape()->cubicTo(c1, c2, to, rel);
     emit updated();
 }
 
@@ -93,6 +93,7 @@ void epath::arcTo(QPointF to, QSizeF radius, qreal xrot, bool larc, bool sweep, 
 
 void epath::pop() {
     pathShape()->pop();
+    emit pointsChanged(size() -1);
     emit updated();
 }
 

@@ -1,4 +1,5 @@
 #include "painthelper.h"
+#include "utils/svgtools.h"
 
 namespace veqtor::canvas {
 paintHelper::paintHelper() {}
@@ -42,36 +43,40 @@ void paintHelper::drawShape(QNanoPainter *painter,
 
 using path_data = shapes::pathdata;
 void paintHelper::drawPath(QNanoPainter *painter, const std::shared_ptr<shapes::path> &path) {
-    apoint head{0, 0}, tail{0, 0};
+    /// @brief "current from" and "last to" points
+    apoint from{0, 0}, lto{0, 0};
 
     for(const path_data &p: *path) {
-        apoint add = p.relative ? tail : apoint{};
-        apoint to = p.to + add;
+        /// @brief Convert "p.to" point to "absolute to"
+        apoint add = p.relative ? from : apoint{};
+        apoint ato = p.to + add;
 
         switch(p.type()) {
             case path_data::Close: painter->closePath(); break;
-            case path_data::Move: painter->moveTo(to); head = to; break;
-            case path_data::Line: painter->lineTo(to); break;
-            case path_data::Hr: to.setY(tail.y()); painter->lineTo(to); break;
-            case path_data::Vr: to.setX(tail.x()); painter->lineTo(to); break;
-            case path_data::Qubic: {
-                apoint c = p.qubic().control;
-                painter->quadTo(c, to);
+            case path_data::Move: painter->moveTo(ato); lto = ato; break;
+            case path_data::Line: painter->lineTo(ato); break;
+            case path_data::Hr: ato.setY(from.y()); painter->lineTo(ato); break;
+            case path_data::Vr: ato.setX(from.x()); painter->lineTo(ato); break;
+            case path_data::Quad: {
+            apoint c = p.quad().control;
+                painter->quadTo(c, ato);
                 break;
             }
-            case path_data::Curve: {
-                apoint c1 = p.curve().c1, c2 = p.curve().c2;
-                painter->bezierTo(c1 + add, c2 + add, to);
+            case path_data::Cubic: {
+                apoint c1 = p.cubic().c1, c2 = p.cubic().c2;
+                painter->bezierTo(c1 + add, c2 + add, ato);
                 break;
             }
             case path_data::Arc: {
-                shapes::pd::arc a = p.arc();
-                painter->arcTo(to.x(), to.y(), a.radius.width(), a.radius.height(), a.rotation);
-                painter->ellipse(to.x(), to.y(), a.radius.width(), a.radius.height());
+                auto cubics = utils::svgTools::arcToCubic(p.arc(), from, ato);
+                for(const auto &cubic: cubics) {
+                    auto _cubic = cubic.cubic();
+                    painter->bezierTo(_cubic.c1, _cubic.c2, cubic.to);
+                }
                 break;
             }
         }
-            tail = (p.type() != path_data::Close ? to : head);
+        from = (p.type() != path_data::Close ? ato : lto);
     }
 }
 

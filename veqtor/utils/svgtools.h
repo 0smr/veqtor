@@ -34,6 +34,13 @@ public:
     static std::vector<shapes::pathdata> svgPathParser(const std::string &svgPath);
 
     /**
+     * @abstract This function converts an SVG arc curve to a list of cubic curves.
+     * @param arc
+     * @return list of cubic curves
+     */
+    static std::vector<shapes::pathdata> arcToCubic(const shapes::pd::arc &arc, const QPointF from, const QPointF &to);
+
+    /**
      * @brief getAttrs
      * @param node
      * @return all element attributes as a QMap object.
@@ -63,8 +70,28 @@ public:
      */
     static QPointer<element> svgParser(const QString &svgString, QObject *parent = nullptr);
 
+    /**
+     * @abstract Convert an SVG hex color that contains an alpha value to a hex color that is compatible with Qt.
+     * #abcd => #ddaabbcc
+     * #aabbccdd => #ddaabbcc
+     * @param color, SVG color hex.
+     * @return color, Qt color hex.
+     */
+    static std::string svgToQtColor(const std::string &color) {
+        std::string c = color.substr(1);
+        if(c.size() == 8) { return "#" + c.substr(6) + c.substr(0, 6); }
+        if(c.size() == 4) {
+            return {'#', c[3], c[3], c[0], c[0], c[1], c[1], c[2], c[2]};
+        }
+        return color;
+    }
+    static QString svgToQtColor(const QString &color) {
+        return QString::fromStdString(svgToQtColor(color.toStdString()));
+    }
+
     static QColor normColor(const QString &color) {
-        return color.length() && color.toLower() != "none" ? QColor(color) : QColor(Qt::transparent);
+        QString _color = color.startsWith('#') ? svgToQtColor(color) : "";
+        return _color.length() && _color.toLower() != "none" ? QColor(_color) : QColor(Qt::transparent);
     }
 
     /**
@@ -77,16 +104,12 @@ public:
         return width.isEmpty() ? 1.0f : width.toFloat();
     }
 
+    /**
+     * @abstract This function parses a viewBox string in SVG format to a QRectF object.
+     * @param viewBox, viewBox string in SVG format
+     * @return viewBox as QRectF
+     */
     static QRectF parseViewBox(const QString &viewBox);
-
-    // {rx ry x-axis-rotation large-arc-flag sweep-flag x y}
-    // void QNanoPainter::arcTo(float c1x, float c1y, float c2x, float c2y, float radius)
-    // a c1x c1y r .0 .0 c2x c2y
-    static std::tuple<QPointF, QPointF, qreal> toNanoArc(const shapes::pd::arc &arc) {
-        Q_UNUSED(arc)
-        return {};
-    }
-
 private:
     inline const static QMap<QString, element::Type> mElementTypeMap{
         {"circle",   element::Circle  },

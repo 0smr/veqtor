@@ -1,5 +1,6 @@
 #include "svgtools.h"
 #include "tools.h"
+#include "arctocubic.h"
 
 #include "../shapes/shapes.h"
 
@@ -28,29 +29,43 @@ std::vector<shapes::pathdata> svgTools::svgPathParser(const QString &svgPath) {
 std::vector<shapes::pathdata> svgTools::svgPathParser(const std::string &svgPath) {
     static const std::regex reg(R"([a-zA-Z][^a-zA-Z]*)");
     static const std::regex subReg(R"(-?\d*\.?\d*)");
-
-    shapes::path pathShape;
+    shapes::path path;
 
     for(const auto &m: tools::globalMatch(svgPath, reg)) {
-        auto a = tools::stodVec(tools::globalMatch(m, subReg));
+        auto v = tools::stodVec(tools::globalMatch(m, subReg));
         bool relative = std::islower(m[0]);
         char type = std::tolower(m[0]);
 
+        /// @brief If the type is `moveTo` or `lineTo`, resize the vector to at least 2; otherwise, resize it to 6.
+        v.resize(std::max(v.size(), type == 'm' || type == 'l' ? 2ull : 7ull));
+
         switch (type) {
-            case 'h': pathShape.hTo(a[0], relative); break;
-            case 'v': pathShape.vTo(a[0], relative); break;
-            case 'm': pathShape.moveTo(a, relative); break;
-            case 'l': pathShape.lineTo(a, relative); break;
-            case 'q': pathShape.qubicTo({a[0], a[1]}, {a[2], a[3]}, relative); break;
+            case 'h': path.hTo(v[0], relative); break;
+            case 'v': path.vTo(v[0], relative); break;
+            case 'm': path.moveTo(v, relative); break;
+            case 'l': path.lineTo(v, relative); break;
+            case 'q': path.quadTo({v[0], v[1]}, {v[2], v[3]}, relative); break;
             case 't': qWarning("Veqtor presently does not support the `t` path line type."); break;
-            case 'c': pathShape.curveTo({a[0], a[1]}, {a[2], a[3]}, {a[4], a[5]}, relative); break;
+            case 'c': path.cubicTo({v[0], v[1]}, {v[2], v[3]}, {v[4], v[5]}, relative); break;
             case 's': qWarning("Veqtor presently does not support the `s` path line type."); break;
-            case 'a': qWarning("Veqtor presently does not support the `a` path line type."); break;
-            case 'z': pathShape.close(); break;
+            case 'a': path.arcTo({v[5], v[6]}, {v[0], v[1]}, v[2], v[3], v[4], relative); break;
+            case 'z': path.close(); break;
         }
     }
 
-    return pathShape.pathData();
+    return path.pathData();
+}
+
+std::vector<shapes::pathdata> svgTools::arcToCubic(const shapes::pd::arc &arc, const QPointF from, const QPointF &to) {
+    auto curves = arcTool::arcToCubic(from, to, arc.radius, arc.rotation, arc.largeArc, arc.sweepFlag);
+    std::vector<shapes::pathdata> pathList;
+    for(auto &curve: curves) {
+        pathList.push_back({
+            curve.to,
+            shapes::pd::cubic{curve.c1, curve.c2}
+        });
+    }
+    return pathList;
 }
 
 QPointer<element> svgTools::elementGenerator(element::Type type, const QMap<QString, QString> &attrs, QObject *parent) {
@@ -106,7 +121,7 @@ QRectF svgTools::parseViewBox(const QString &viewBox) {
     static const std::regex reg(R"(-?\d*\.?\d*(px)?)");
     auto m = tools::stodVec(tools::globalMatch(viewBox.toStdString(), reg));
     m.resize(4, 0.0f);
-    // viewbox = "x, y, width, height"
+    /// @brief viewbox = "x, y, width, height"
     return QRectF(m[0], m[1], m[2], m[3]);
 }
 }

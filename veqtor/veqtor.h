@@ -29,6 +29,7 @@ class veqtor : public QNanoQuickItem {
     Q_PROPERTY(QString src READ src WRITE setSrc NOTIFY srcChanged)
     Q_PROPERTY(QVariantMap document READ document NOTIFY documentChanged)
     Q_PROPERTY(QObject* root READ root NOTIFY rootChanged)
+    Q_PROPERTY(QSizeF sourceSize READ sourceSize CONSTANT)
 public:
     /** @brief The Tools enum */
     veqtor(QQuickItem *parent = nullptr);
@@ -70,6 +71,8 @@ public:
         return mDocument[id];
     }
 
+    QSizeF sourceSize() const { return mSourceSize; }
+
 private slots:
     void setElementsToProperties();
     void adjustSize();
@@ -83,10 +86,10 @@ private slots:
 
         emit documentChanged();
     }
+    void updateElementAttributes();
 
 public slots:
     void update();
-    void propertyChanged();
 
 signals:
     void srcChanged();
@@ -99,6 +102,7 @@ private:
     QPointer<elements::svg> mRoot;
     QVariantMap mDocument;
     QString mSrc;
+    QSizeF mSourceSize;
 
     QTimer mUpdateTimer;
     QTransform mAdjustment;

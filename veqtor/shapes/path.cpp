@@ -42,8 +42,10 @@ void path::hTo(qreal x, bool relative) {
 }
 
 void path::moveTo(std::vector<double> points, bool relative) {
+    // `points.size() &~ 1` will round the vector size to a multiple of 2.
+    points.resize(std::max(2ull, points.size() &~ 1), 0);
     moveTo(apoint{points[0], points[1]}, relative);
-    for(size_t i{2}; i< points.size(); i+=2) {
+    for(size_t i{2}; i < points.size() - 1; i+=2) {
         lineTo(apoint{points[i], points[i+1]}, relative);
     }
 }
@@ -53,8 +55,10 @@ void path::moveTo(apoint to, bool relative) {
     expandBoundigBox(to);
 }
 
-void path::lineTo(std::vector<double> points, bool relative) {
-    for(size_t i{}; i< points.size(); i+=2) {
+void path::lineTo(const std::vector<double> &points, bool relative) {
+    // `points.size() &~ 1` will round the vector size to a multiple of 2.
+    size_t size =  points.size() &~ 1;
+    for(size_t i{}; i < size; i+=2) {
         lineTo(apoint{points[i], points[i+1]}, relative);
     }
 }
@@ -64,25 +68,27 @@ void path::lineTo(apoint to, bool relative) {
     expandBoundigBox(to);
 }
 
-void path::qubicTo(const apoint &control, const apoint &to, bool relative) {
+void path::quadTo(const apoint &control, const apoint &to, bool relative) {
     mPathData.push_back({invertTransformer().map(to),
-                         pd::qubic{invertTransformer().map(control)},
+                         pd::quad{invertTransformer().map(control)},
                          relative});
     expandBoundigBox(to);
 }
 
-void path::curveTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative) {
+void path::cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative) {
     mPathData.push_back({
         invertTransformer().map(to),
-        pd::curve{invertTransformer().map(c1), invertTransformer().map(c2)},
+        pd::cubic{invertTransformer().map(c1), invertTransformer().map(c2)},
         relative
     });
-
     expandBoundigBox(to);
 }
 
 void path::arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative) {
-    mPathData.push_back({invertTransformer().map(to), pd::arc{ radius, xrot, larc, sweep}, relative});
+    mPathData.push_back({
+        invertTransformer().map(to), pd::arc{radius, xrot, larc, sweep},
+        relative
+    });
     expandBoundigBox(to);
 }
 

@@ -10,7 +10,7 @@ class path;
  */
 class line : public QLineF, public shape {
 public:
-    enum LineType { None, Point, Line, Qubic, Curve, Arc };
+    enum LineType { None, Point, Line, Quad, Cubic, Arc };
 
     line(const QLineF& l = QLineF(), const core::nanoPen& pen = core::nanoPen())
         : QLineF(l), shape(l, pen) {}

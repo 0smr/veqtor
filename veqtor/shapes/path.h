@@ -12,16 +12,16 @@ namespace pd {
     struct line  { };
     struct hr    { };
     struct vr    { };
-    struct qubic { apoint control; };
-    struct curve { apoint c1, c2; };
+    struct quad  { apoint control; };
+    struct cubic { apoint c1, c2; };
     struct arc   { QSizeF radius; qreal rotation; bool largeArc, sweepFlag; };
     struct close { };
 }  // namespace pd
 
 struct pathdata {
-    using path_data = std::variant<pd::close, pd::move, pd::line, pd::vr, pd::hr, pd::arc, pd::qubic, pd::curve>;
+    using path_data = std::variant<pd::close, pd::move, pd::line, pd::vr, pd::hr, pd::arc, pd::quad, pd::cubic>;
     using real_limit = std::numeric_limits<qreal>;
-    enum Type {Close, Move, Line, Vr, Hr, Arc, Qubic, Curve};
+    enum Type {Close, Move, Line, Vr, Hr, Arc, Quad, Cubic};
 
     pathdata(const pd::close& data): relative{}, to{}, data{data} {}
     pathdata(const apoint& point, const path_data& data, bool relative = false)
@@ -33,12 +33,11 @@ struct pathdata {
         case 'l': data = pd::line{}; break;
         case 'v': data = pd::vr{}; break;
         case 'h': data = pd::hr{}; break;
-        case 'q': data = pd::qubic{vdata["control"].toPointF()}; break;
-        case 'c': data = pd::curve{vdata["control1"].toPointF(), vdata["control2"].toPointF()}; break;
+        case 'q': data = pd::quad{vdata["control"].toPointF()}; break;
+        case 'c': data = pd::cubic{vdata["control1"].toPointF(), vdata["control2"].toPointF()}; break;
         case 'a': data = pd::arc{vdata["radius"].toSizeF(), vdata["rotation"].toDouble(),
-                                 vdata["largeArc"].toBool(), vdata["sweepFlag"].toBool()};
-            break;
-        case 'Z': case 'z': default: data = pd::close{};
+                                 vdata["largeArc"].toBool(), vdata["sweepFlag"].toBool()}; break;
+        case 'z': default: data = pd::close{};
         }
     }
     pathdata(const QVariantMap &map)
@@ -53,18 +52,22 @@ struct pathdata {
     bool isMove() const { return data.index() == Move; }
     bool isLine() const { return data.index() == Line; }
     bool isArc()  const { return data.index() == Arc; }
-    bool isQubic() const { return data.index() == Qubic; }
-    bool isCurve() const { return data.index() == Curve; }
+    bool isQuad() const { return data.index() == Quad; }
+    bool isCubic() const { return data.index() == Cubic; }
     bool isClose() const { return data.index() == Close; }
 
-    pd::curve curve() const { return std::get<pd::curve>(data); }
-    pd::qubic qubic() const { return std::get<pd::qubic>(data); }
+    pd::cubic cubic() const { return std::get<pd::cubic>(data); }
+    pd::cubic &cubic() { return std::get<pd::cubic>(data); }
+    pd::quad quad() const { return std::get<pd::quad>(data); }
+    pd::quad &quad() { return std::get<pd::quad>(data); }
     pd::arc arc() const { return std::get<pd::arc>(data); }
+    pd::arc &arc() { return std::get<pd::arc>(data); }
 
     QVariantMap map() const {
         QVariantMap map{{"relative", relative},{"to", to}};
-        if(isCurve()) { map["control"] = QVariantList{{curve().c1, curve().c2}}; }
-        else if(isQubic()) { map["control"] = qubic().control; }
+        map["type"] = QChar("vhmlaqcz"[data.index()]);
+        if(isCubic()) { map["control"] = QVariantList{{cubic().c1, cubic().c2}}; }
+        else if(isQuad()) { map["control"] = quad().control; }
         else if(isArc()) {
             map.insert({
                 {"radius",   arc().radius   },
@@ -130,11 +133,11 @@ public:
         if(!transformer().isIdentity()) {
             for(pathdata& pdata : mPathData) {
                 pdata.to.transform(transformer());
-                if(pdata.type() == pathdata::Curve) {
-                    std::get<pd::curve>(pdata.data).c1.transform(transformer());
-                    std::get<pd::curve>(pdata.data).c2.transform(transformer());
-                } else if(pdata.type() == pathdata::Qubic) {
-                    std::get<pd::qubic>(pdata.data).control.transform(transformer());
+                if(pdata.type() == pathdata::Cubic) {
+                    std::get<pd::cubic>(pdata.data).c1.transform(transformer());
+                    std::get<pd::cubic>(pdata.data).c2.transform(transformer());
+                } else if(pdata.type() == pathdata::Quad) {
+                    std::get<pd::quad>(pdata.data).control.transform(transformer());
                 }
             }
         }
@@ -171,10 +174,10 @@ public:
     void hTo(qreal x, bool relative = false);
     void moveTo(std::vector<double> points, bool relative = false);
     void moveTo(apoint to, bool relative = false);
-    void lineTo(std::vector<double> points, bool relative = false);
+    void lineTo(const std::vector<double> &points, bool relative = false);
     void lineTo(apoint to, bool relative = false);
-    void qubicTo(const apoint &control, const apoint &to, bool relative = false);
-    void curveTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative = false);
+    void quadTo(const apoint &control, const apoint &to, bool relative = false);
+    void cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative = false);
     void arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative = false);
     void close();
 

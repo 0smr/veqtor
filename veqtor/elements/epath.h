@@ -27,7 +27,8 @@ public:
     void setData(const QString &d);
     void setAttributes(const QVariantMap &attrs) override;
 
-    Q_INVOKABLE QVariantMap at(unsigned long long i) const;
+    Q_INVOKABLE size_t size() const { return pathShape()->size(); }
+    Q_INVOKABLE QVariantMap at(size_t index) const;
     Q_INVOKABLE QVariantMap shift();
 
 public slots:
@@ -36,18 +37,52 @@ public slots:
     void hTo(qreal x, bool rel = false);
     void moveTo(QPointF to, bool rel = false);
     void lineTo(QPointF to, bool rel = false);
-    void qubicTo(const QPointF &c, const QPointF &to, bool rel = false);
-    void curveTo(const QPointF &c1, const QPointF &c2, const QPointF &to, bool rel = false);
+    void quadTo(const QPointF &c, const QPointF &to, bool rel = false);
+    void cubicTo(const QPointF &c1, const QPointF &c2, const QPointF &to, bool rel = false);
     void arcTo(QPointF to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool rel = false);
 
     void pop();
+
+    /**
+     * @abstract push new node to path.
+     * @param type: Node type, which can have possible values such as h, v, m, l, q, t, c, s, a, or z.
+     * @param to: The target point.
+     * @param relative: A boolean value.
+     * @param data: Extra data for the path node.
+     * @list
+     * @li q: point{x1 y1},
+     * @li c: point{x1 y1}, point{x2 y2}
+     * @li a: size{rx ry}, x-axis-rotation: `real`, large-arc-flag: `bool`, sweep-flag: `bool`
+     * @endlist
+     */
     void push(char type, const QPointF &to, const QVariantMap &data, bool relative = false);
+
+    /**
+     * @abstract Set a new value for the path data at the given index.
+     * @param index, Index of the path data in the vector. If the given value is out of range, nothing will change.
+     * @param data, Path data value in the form of a structure {type: `char`, to: `point`, data: `Object`, relative: `bool` }.
+     * @list
+     * @li to: point{x: `real`, y: `real` }
+     * @li relative: `true`|`false`
+     * @li type: h|v|m|l|q|t|c|s|a|z
+     * @li data:
+     *      - q: point{x1 y1},
+     *      - c: point{x1 y1}, point{x2 y2}
+     *      - a: size{rx ry}, x-axis-rotation: `real`, large-arc-flag: `bool`, sweep-flag: `bool`
+     * @endlist
+     */
+    void set(size_t index, const QVariantMap &data) {
+        if(index < size()) return;
+        pathShape()->at(index) = shapes::pathdata(data);
+        emit updated();
+    }
 
 private:
     static QStringList mainAttrs() { return {"d","path-length"}; }
 
 signals:
     void dataChanged();
+    void pointsChanged(size_t index);
 
 private:
     QString mData;

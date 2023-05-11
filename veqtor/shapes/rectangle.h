@@ -36,13 +36,13 @@ public:
          */
         ps.setPathData({
             {bb[0].plus(0, rads[0]), pd::move{}},
-            {bb[0].plus(rads[0], 0), pd::qubic{bb[0]}},
+            {bb[0].plus(rads[0], 0), pd::quad{bb[0]}},
             {bb[1].sub (rads[1], 0), pd::line{}},
-            {bb[1].plus(0, rads[1]), pd::qubic{bb[1]}},
+            {bb[1].plus(0, rads[1]), pd::quad{bb[1]}},
             {bb[2].sub (0, rads[2]), pd::line{}},
-            {bb[2].plus(rads[2], 0), pd::qubic{bb[2]}},
+            {bb[2].plus(rads[2], 0), pd::quad{bb[2]}},
             {bb[3].sub (rads[3], 0), pd::line{}},
-            {bb[3].plus(0, rads[3]), pd::qubic{bb[3]}},
+            {bb[3].plus(0, rads[3]), pd::quad{bb[3]}},
             {bb[0], pd::line{}},
             pd::close{},
         });

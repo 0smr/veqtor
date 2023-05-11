@@ -32,8 +32,7 @@ QVector<double> tools::stodVec(const QVector<QString> &svec) {
 }
 
 QString tools::toValidFilePath(const QString &path) {
-    QString valid = path.startsWith("file:///") ? QUrl{path}.toLocalFile() :
-                    path.startsWith("qrc:/")  ? (":" + QUrl{path}.path()) : path;
-    return valid;
+    return path.startsWith("file:///") ? QUrl{path}.toLocalFile() :
+           path.startsWith("qrc:/")  ? (":" + QUrl{path}.path()) : path;
 }
 }

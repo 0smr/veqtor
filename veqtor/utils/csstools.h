@@ -6,8 +6,7 @@
 #include <regex>
 
 namespace veqtor::utils {
-class cssTools
-{
+class cssTools {
 public:
     cssTools();
     /**
@@ -20,4 +19,4 @@ public:
     static QHash<QString, QString> cssStyleParser(const QString &style);
     static QHash<QString, QString> cssStyleParser(const std::string &style);
 };
-}
+} // namespace veqtor::utils

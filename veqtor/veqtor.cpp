@@ -21,8 +21,8 @@ veqtor::veqtor(QQuickItem *parent) : QNanoQuickItem(parent) {
     mUpdateTimer.setSingleShot(true);
     mUpdateTimer.callOnTimeout(this, &QQuickItem::update);
 
-    connect(this, &veqtor::widthChanged, this, veqtor::adjustResponsive);
-    connect(this, &veqtor::heightChanged, this, veqtor::adjustResponsive);
+    connect(this, &veqtor::widthChanged, this, &veqtor::adjustResponsive);
+    connect(this, &veqtor::heightChanged, this, &veqtor::adjustResponsive);
 }
 
 QNanoQuickItemPainter *veqtor::createItemPainter() const {
@@ -55,7 +55,7 @@ void veqtor::componentComplete() {
      *  The signal names are a mix of the property name and the "Changed()" string.
      */
     int num = metaObject()->propertyCount();
-    for(int i = metaObject()->propertyOffset(); i < num; ++i) {
+    for(int i = metaObject()->propertyOffset() + 1; i < num; ++i) {
         QMetaProperty mp = metaObject()->property(i);
         if(mp.isWritable() && !mp.isConstant()) {
             QByteArray signalName = QT_STRINGIFY(QSIGNAL_CODE) + QByteArray(mp.name()) + "Changed()";
@@ -87,20 +87,7 @@ void veqtor::setSrc(const QString &src) {
     mSrc = src;
     emit srcChanged();
 
-    QString data = src;
-
-    /// If src is file address extract it's data.
-    if(src.size() < 256 && !src.trimmed().startsWith("<svg")) {
-        QString path = utils::tools::toValidFilePath(src);
-        QFile file(path);
-
-        data.clear();
-
-        if(file.open(QFile::ReadOnly)) {
-            data = file.readAll();
-            file.close();
-        }
-    }
+    QString data = utils::tools::contentResolver(src);
 
     /// Delete old tree
     /// There is a chance that svgParser return nullptr value, and this would cause
@@ -110,7 +97,7 @@ void veqtor::setSrc(const QString &src) {
     /// Generate new tree
     const auto root = utils::svgTools::svgParser(data, this);
 
-    if(root) {
+    if(root && root->type() == elements::element::SVG) {
         mRoot = dynamic_cast<elements::svg*>(root.data());
         mDocument.clear();
         mRoot->walk([this](const QPointer<elements::element>& el) {
@@ -157,15 +144,30 @@ void veqtor::setElementsToProperties() {
 void veqtor::adjustSize() {
     QRectF viewBox = mRoot->viewBox();
 
-    setImplicitWidth(viewBox.width());
-    setImplicitHeight(viewBox.height());
+    /// If the root changes, update the source size, implicit width, and implicit height.
+    if(viewBox.isValid()) {
+        setImplicitWidth(viewBox.width());
+        setImplicitHeight(viewBox.height());
+        mSourceSize = viewBox.size();
+    }
+
     adjustResponsive();
 }
 
 void veqtor::adjustResponsive() {
-    QSizeF size  = mRoot->viewBox().size();
-    float scale  = std::min({width()/size.width(), height()/size.height()});
-    QPointF offset{width() - scale * size.width(), height() - scale * size.height()};
+    if(!mRoot) return;
+
+    QRectF viewBox  = mRoot->viewBox();
+
+    /// If width or height is not valid, set its value based on the viewbox size.
+    if(!widthValid() || !heightValid()) {
+        qreal _ratio = viewBox.width()/viewBox.height();
+        if(!widthValid())  setImplicitWidth(_ratio * height());
+        if(!heightValid()) setImplicitHeight(width() / _ratio);
+    }
+
+    float scale  = std::min({width()/viewBox.width(), height()/viewBox.height()});
+    QPointF offset{width() - scale * viewBox.width(), height() - scale * viewBox.height()};
 
     mAdjustment.reset();
     /// Move the SVG shape to center of Item.
@@ -180,7 +182,7 @@ void veqtor::update() {
     }
 }
 
-void veqtor::propertyChanged() {
+void veqtor::updateElementAttributes() {
     /// FIXME: There is a chance that this slot will be called before mRoot initialization.
 
     QMetaMethod metaMethod = sender()->metaObject()->method(senderSignalIndex());

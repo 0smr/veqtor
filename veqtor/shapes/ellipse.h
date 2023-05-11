@@ -31,10 +31,10 @@ public:
 
         ps.setPathData({
             {{bb.left(),   c.y()}, pd::move{}},
-            {{c.y(),    bb.top()}, pd::qubic{bb.topLeft()}},
-            {{bb.right(),  c.y()}, pd::qubic{bb.topRight()}},
-            {{c.y(), bb.bottom()}, pd::qubic{bb.bottomRight()}},
-            {{bb.left(),   c.y()}, pd::qubic{bb.bottomLeft()}},
+            {{c.y(),    bb.top()}, pd::quad{bb.topLeft()}},
+            {{bb.right(),  c.y()}, pd::quad{bb.topRight()}},
+            {{c.y(), bb.bottom()}, pd::quad{bb.bottomRight()}},
+            {{bb.left(),   c.y()}, pd::quad{bb.bottomLeft()}},
             pd::close{}
         });
 
