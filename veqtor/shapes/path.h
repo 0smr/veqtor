@@ -13,15 +13,19 @@ namespace pd {
     struct hr    { };
     struct vr    { };
     struct quad  { apoint control; };
+    struct tquad { apoint control; };
     struct cubic { apoint c1, c2; };
+    struct scubic{ apoint control; };
     struct arc   { QSizeF radius; qreal rotation; bool largeArc, sweepFlag; };
     struct close { };
 }  // namespace pd
 
 struct pathdata {
-    using path_data = std::variant<pd::close, pd::move, pd::line, pd::vr, pd::hr, pd::arc, pd::quad, pd::cubic>;
+    using path_data =
+        std::variant<pd::close, pd::move, pd::line, pd::vr, pd::hr, pd::arc,
+                     pd::quad, pd::tquad, pd::cubic, pd::scubic>;
     using real_limit = std::numeric_limits<qreal>;
-    enum Type {Close, Move, Line, Vr, Hr, Arc, Quad, Cubic};
+    enum Type {Close, Move, Line, Vr, Hr, Arc, Quad, ShortQuad, Cubic, ShortCubic};
 
     pathdata(const pd::close& data): relative{}, to{}, data{data} {}
     pathdata(const apoint& point, const path_data& data, bool relative = false)
@@ -34,7 +38,9 @@ struct pathdata {
         case 'v': data = pd::vr{}; break;
         case 'h': data = pd::hr{}; break;
         case 'q': data = pd::quad{vdata["control"].toPointF()}; break;
+        case 't': data = pd::tquad{}; break;
         case 'c': data = pd::cubic{vdata["control1"].toPointF(), vdata["control2"].toPointF()}; break;
+        case 's': data = pd::scubic{vdata["control"].toPointF()}; break;
         case 'a': data = pd::arc{vdata["radius"].toSizeF(), vdata["rotation"].toDouble(),
                                  vdata["largeArc"].toBool(), vdata["sweepFlag"].toBool()}; break;
         case 'z': default: data = pd::close{};
@@ -54,29 +60,35 @@ struct pathdata {
     bool isArc()  const { return data.index() == Arc; }
     bool isQuad() const { return data.index() == Quad; }
     bool isCubic() const { return data.index() == Cubic; }
+    bool isShortQuad() const { return data.index() == ShortQuad; }
+    bool isShortCubic() const { return data.index() == ShortCubic; }
     bool isClose() const { return data.index() == Close; }
 
+    pd::scubic scubic() const { return std::get<pd::scubic>(data); }
+    pd::scubic &scubic() { return std::get<pd::scubic>(data); }
     pd::cubic cubic() const { return std::get<pd::cubic>(data); }
     pd::cubic &cubic() { return std::get<pd::cubic>(data); }
+    pd::tquad tquad() const { return std::get<pd::tquad>(data); }
+    pd::tquad &tquad() { return std::get<pd::tquad>(data); }
     pd::quad quad() const { return std::get<pd::quad>(data); }
     pd::quad &quad() { return std::get<pd::quad>(data); }
     pd::arc arc() const { return std::get<pd::arc>(data); }
     pd::arc &arc() { return std::get<pd::arc>(data); }
 
     QVariantMap map() const {
-        QVariantMap map{{"relative", relative},{"to", to}};
-        map["type"] = QChar("vhmlaqcz"[data.index()]);
-        if(isCubic()) { map["control"] = QVariantList{{cubic().c1, cubic().c2}}; }
-        else if(isQuad()) { map["control"] = quad().control; }
+        QVariantMap value{{"relative", relative},{"to", to}};
+        value["type"] = QChar("vhmlaqcz"[data.index()]);
+        if(isCubic()) { value["control"] = QVariantList{{cubic().c1, cubic().c2}}; }
+        else if(isQuad()) { value["control"] = quad().control; }
         else if(isArc()) {
-            map.insert({
+            value.insert({
                 {"radius",   arc().radius   },
                 {"rotation", arc().rotation },
                 {"sweep",    arc().sweepFlag},
                 {"largeArc", arc().largeArc },
             });
         }
-        return map;
+        return value;
     }
 
     bool relative;
@@ -177,8 +189,17 @@ public:
     void lineTo(const std::vector<double> &points, bool relative = false);
     void lineTo(apoint to, bool relative = false);
     void quadTo(const apoint &control, const apoint &to, bool relative = false);
+    void shortQuadTo(const apoint &to, bool relative = false) {
+
+    }
     void cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative = false);
+    void cubicTo(const std::vector<double> &v, bool relative = false);
+    void shortCubicTo(const apoint &control, const apoint &to, bool relative = false) {
+        mPathData.push_back({invertTransformer().map(to), pd::scubic{control}, relative});
+        expandBoundigBox(to);
+    }
     void arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative = false);
+    void arcTo(const std::vector<double> &v, bool relative = false);
     void close();
 
     /// setters

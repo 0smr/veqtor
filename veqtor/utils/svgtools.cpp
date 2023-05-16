@@ -46,9 +46,9 @@ std::vector<shapes::pathdata> svgTools::svgPathParser(const std::string &svgPath
             case 'l': path.lineTo(v, relative); break;
             case 'q': path.quadTo({v[0], v[1]}, {v[2], v[3]}, relative); break;
             case 't': qWarning("Veqtor presently does not support the `t` path line type."); break;
-            case 'c': path.cubicTo({v[0], v[1]}, {v[2], v[3]}, {v[4], v[5]}, relative); break;
-            case 's': qWarning("Veqtor presently does not support the `s` path line type."); break;
-            case 'a': path.arcTo({v[5], v[6]}, {v[0], v[1]}, v[2], v[3], v[4], relative); break;
+            case 'c': path.cubicTo(v, relative); break;
+            case 's': path.shortCubicTo({v[0], v[1]}, {v[2], v[3]}, relative); break;
+            case 'a': path.arcTo(v, relative); break;
             case 'z': path.close(); break;
         }
     }

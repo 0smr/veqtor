@@ -115,7 +115,7 @@ void veqtor::setSrc(const QString &src) {
 
         emit documentChanged();
         emit rootChanged();
-        emit svgLoaded();
+        QTimer::singleShot(0, this, &veqtor::svgLoaded);
     }
 
     update();
@@ -174,9 +174,15 @@ void veqtor::adjustResponsive() {
     mAdjustment.translate(offset.x()/2, offset.y()/2);
     /// Scale the SVG shape to fit
     mAdjustment.scale(scale, scale);
+    mAdjustment.translate(-viewBox.x(), -viewBox.y());
 }
 
 void veqtor::update() {
+    /**
+     * FIXME: Currently, updates occur with a very small delay to prevent high-frequency updates.
+     *  but they should happen instantly in the case of a single update.
+     * The current solution is to use a counter to limit update calls if there are more than two updates.
+     */
     if(!mUpdateTimer.isActive() && isEnabled()) {
         mUpdateTimer.start();
     }

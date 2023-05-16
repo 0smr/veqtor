@@ -85,12 +85,12 @@ public:
         }
         return color;
     }
-    static QString svgToQtColor(const QString &color) {
+    inline static QString svgToQtColor(const QString &color) {
         return QString::fromStdString(svgToQtColor(color.toStdString()));
     }
 
     static QColor normColor(const QString &color) {
-        QString _color = color.startsWith('#') ? svgToQtColor(color) : "";
+        QString _color = color.startsWith('#') ? svgToQtColor(color) : color;
         return _color.length() && _color.toLower() != "none" ? QColor(_color) : QColor(Qt::transparent);
     }
 
@@ -99,7 +99,8 @@ public:
      * @abstract Takes stroke-width as input and returns it as a float integer.
      *  if no input is provided, the default value is 1.0f.
      * @param width
-     * @return return normal stromElementTypeMap     */
+     * @return return normal stromElementTypeMap
+     */
     static float normSW(const QString &width) {
         return width.isEmpty() ? 1.0f : width.toFloat();
     }

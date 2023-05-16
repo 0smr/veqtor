@@ -84,12 +84,28 @@ void path::cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool re
     expandBoundigBox(to);
 }
 
+void path::cubicTo(const std::vector<double> &v, bool relative) {
+    // Round the vector size to a multiple of 6.
+    size_t size =  (v.size() / 6) * 6;
+    for(size_t i{}; i < size; i+=6) {
+        cubicTo({v[0+i], v[1+i]}, {v[2+i], v[3+i]}, {v[4+i], v[5+i]}, relative);
+    }
+}
+
 void path::arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative) {
     mPathData.push_back({
         invertTransformer().map(to), pd::arc{radius, xrot, larc, sweep},
         relative
     });
     expandBoundigBox(to);
+}
+
+void path::arcTo(const std::vector<double> &v, bool relative) {
+    // Round the vector size to a multiple of 7.
+    size_t size =  (v.size() / 7) * 7;
+    for(size_t i{}; i < size; i+=7) {
+        arcTo({v[5+i], v[6+i]}, {v[0+i], v[1+i]}, v[2+i], v[3+i], v[4+i], relative);
+    }
 }
 
 void path::close() {

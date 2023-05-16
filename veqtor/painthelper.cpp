@@ -11,7 +11,7 @@ void paintHelper::drawShape(QNanoPainter *painter,
         if(shape->type()) {
             pen.setToPainter(painter);
             painter->resetTransform();
-            painter->transform(rootTransform * shape->transformer());
+            painter->transform(shape->transformer() * rootTransform);
             painter->beginPath();
         }
 
@@ -41,10 +41,10 @@ void paintHelper::drawShape(QNanoPainter *painter,
     }
 }
 
-using path_data = shapes::pathdata;
 void paintHelper::drawPath(QNanoPainter *painter, const std::shared_ptr<shapes::path> &path) {
-    /// @brief "current from" and "last to" points
-    apoint from{0, 0}, lto{0, 0};
+    using path_data = shapes::pathdata;
+    /// @brief "current from", "last to" and "last cubic control" points
+    apoint from{}, lto{}, alcc{};
 
     for(const path_data &p: *path) {
         /// @brief Convert "p.to" point to "absolute to"
@@ -58,13 +58,17 @@ void paintHelper::drawPath(QNanoPainter *painter, const std::shared_ptr<shapes::
             case path_data::Hr: ato.setY(from.y()); painter->lineTo(ato); break;
             case path_data::Vr: ato.setX(from.x()); painter->lineTo(ato); break;
             case path_data::Quad: {
-            apoint c = p.quad().control;
-                painter->quadTo(c, ato);
+                apoint c = p.quad().control;
+                painter->quadTo(c + add, ato);
+                break;
+            }
+            case shapes::pathdata::ShortQuad: {
                 break;
             }
             case path_data::Cubic: {
                 apoint c1 = p.cubic().c1, c2 = p.cubic().c2;
                 painter->bezierTo(c1 + add, c2 + add, ato);
+                alcc = c2 + add;
                 break;
             }
             case path_data::Arc: {
@@ -75,8 +79,17 @@ void paintHelper::drawPath(QNanoPainter *painter, const std::shared_ptr<shapes::
                 }
                 break;
             }
+            case path_data::ShortCubic: {
+                /// Reflection of last point to "from" point.
+                apoint ac1 = alcc.isNull() ? from : 2 * from - alcc,
+                       c2 = p.scubic().control;
+                painter->bezierTo(ac1, c2 + add, ato);
+                alcc = c2 + add;
+                break;
+            }
         }
-        from = (p.type() != path_data::Close ? ato : lto);
+        from = (!p.isClose() ? ato : lto);
+        alcc = p.isCubic() || p.isShortCubic() ? alcc : apoint{0,0};
     }
 }
 
