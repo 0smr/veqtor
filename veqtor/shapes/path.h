@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <algorithm>
+#include <QVariant>
 
 #include "apoint.h"
 #include "shape.h"
@@ -131,10 +132,7 @@ public:
     }
 
     void pop() { mPathData.pop_back(); }
-    void leftShift() {
-        std::rotate(mPathData.begin(), mPathData.begin() + 1, mPathData.end());
-        mPathData.resize(mPathData.size() - 1, pd::close{});
-    }
+    void leftShift() { mPathData.erase(mPathData.begin()); }
 
     /**
      * @brief applyTransform
@@ -178,9 +176,7 @@ public:
 
     void clear() { mPathData.clear(); }
     void push(const pathdata &l) { mPathData.push_back(l); }
-    void push(char type, QPointF to, const QVariantMap &data, bool relative = false) {
-        mPathData.push_back({type, to, data, relative});
-    }
+    void push(char type, QPointF to, const QVariantMap &data, bool relative = false);
 
     void vTo(qreal y, bool relative = false);
     void hTo(qreal x, bool relative = false);
@@ -189,24 +185,16 @@ public:
     void lineTo(const std::vector<double> &points, bool relative = false);
     void lineTo(apoint to, bool relative = false);
     void quadTo(const apoint &control, const apoint &to, bool relative = false);
-    void shortQuadTo(const apoint &to, bool relative = false) {
-
-    }
+    void shortQuadTo(const apoint &to, bool relative = false);
     void cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative = false);
     void cubicTo(const std::vector<double> &v, bool relative = false);
-    void shortCubicTo(const apoint &control, const apoint &to, bool relative = false) {
-        mPathData.push_back({invertTransformer().map(to), pd::scubic{control}, relative});
-        expandBoundigBox(to);
-    }
+    void shortCubicTo(const apoint &control, const apoint &to, bool relative = false);
     void arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative = false);
     void arcTo(const std::vector<double> &v, bool relative = false);
     void close();
 
     /// setters
-    void setPathData(const std::vector<pathdata> &pathData) {
-        mPathData = pathData;
-        updateBoundingBox();
-    }
+    void setPathData(const std::vector<pathdata> &pathData);
 
     /// getters
     bool singlePoint() const { return size() == 1; }

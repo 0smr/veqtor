@@ -7,6 +7,12 @@
 #include "../shapes/shapes.h"
 #include "element.h"
 
+#if QT_VERSION >= 0x060000
+    #define veq_list_size qsizetype
+#else
+    #define veq_list_size int
+#endif
+
 namespace veqtor::elements {
 using el_ptr = QPointer<element>;
 
@@ -37,15 +43,15 @@ public:
     bool empty() { return mChildren.empty(); }
     int size() { return mChildren.size(); }
 
-    const QQmlListProperty<element> childrenList() {
+    QQmlListProperty<element> childrenList() {
         using qq_list_prop = QQmlListProperty<element>;
         static auto cast = [](qq_list_prop *l){ return reinterpret_cast<QVector<el_ptr>*>(l->data); };
-        static auto repl = [](qq_list_prop *l, int i, element *el){ cast(l)->replace(i, el); };
-        static auto at   = [](qq_list_prop *l, int i){ return cast(l)->at(i).data(); };
+        static auto repl = [](qq_list_prop *l, veq_list_size  i, element *el){ cast(l)->replace(i, el); };
+        static auto at   = [](qq_list_prop *l, veq_list_size  i){ return cast(l)->at(i).data(); };
         static auto app  = [](qq_list_prop *l, element *el){ cast(l)->push_back(el); };
         static auto pop  = [](qq_list_prop *l){ return cast(l)->pop_back(); };
         static auto clr  = [](qq_list_prop *l){ return cast(l)->clear(); };
-        static auto size = [](qq_list_prop *l){ return cast(l)->size(); };
+        static auto size = [](qq_list_prop *l)->veq_list_size { return cast(l)->size(); };
         return {this, &mChildren, app, size, at, clr, repl, pop};
     }
 

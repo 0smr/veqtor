@@ -46,6 +46,11 @@ void paintHelper::drawPath(QNanoPainter *painter, const std::shared_ptr<shapes::
     /// @brief "current from", "last to" and "last cubic control" points
     apoint from{}, lto{}, alcc{};
 
+    /// Add a moveTo at the beginning of the path if it doesn't start with one.
+    if(!path->empty() && !path->front().isMove()) {
+        painter->moveTo(path->front().to);
+    }
+
     for(const path_data &p: *path) {
         /// @brief Convert "p.to" point to "absolute to"
         apoint add = p.relative ? from : apoint{};

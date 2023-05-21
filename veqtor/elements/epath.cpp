@@ -40,7 +40,7 @@ void epath::setAttributes(const QVariantMap &attrs) {
     graphic::setAttributes(tools::filter(attrs, mainAttrs()));
 }
 
-QVariantMap epath::at(size_t index) const {
+QVariantMap epath::at(long long index) const {
     auto shape = pathShape();
     return index < shape->size() ? shape->at(index).map() : QVariantMap();
 }

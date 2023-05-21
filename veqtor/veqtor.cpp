@@ -26,17 +26,20 @@ veqtor::veqtor(QQuickItem *parent) : QNanoQuickItem(parent) {
 }
 
 QNanoQuickItemPainter *veqtor::createItemPainter() const {
-    core::nanoPainter *qquickItem = new core::nanoPainter();
-    qquickItem->setCanvas(this);
-    return qquickItem;
+    core::nanoPainter *itemPainter = new core::nanoPainter();
+    itemPainter->setCanvas(this);
+    return itemPainter;
 }
 
 void veqtor::hoverMoveEvent(QHoverEvent* event) {
     using elements::element;
 
     if(mRoot) {
+#if QT_VERSION >= 0x060000
+        QPointF mousePosition = event->position();
+#else
         QPointF mousePosition = event->posF();
-
+#endif
         /// Walk through all of the shape element nodes.
         /// The `any` function acts as a pre-order traversal, going through all the elements.
         /// TODO: Change the traversal type to reversed post-order.
@@ -183,6 +186,7 @@ void veqtor::update() {
      *  but they should happen instantly in the case of a single update.
      * The current solution is to use a counter to limit update calls if there are more than two updates.
      */
+    QQuickItem::update();
     if(!mUpdateTimer.isActive() && isEnabled()) {
         mUpdateTimer.start();
     }
@@ -195,7 +199,12 @@ void veqtor::updateElementAttributes() {
     QByteArray name = metaMethod.name().chopped(7);
     QVariant prop = property(name.constData());
 
-    if(prop.type() == QVariant::UserType && mDocument.contains(name) && !mDocument[name].isNull()) {
+#if QT_VERSION >= 0x060000
+    bool isUserType = prop.typeId() == QMetaType::User;
+#else
+    bool isUserType = prop.type() == QVariant::UserType;
+#endif
+    if(isUserType && mDocument.contains(name) && !mDocument[name].isNull()) {
         auto elm = mDocument[name].value<elements::element*>();
         if(elm) elm->setAttributes(prop.toMap());
     }

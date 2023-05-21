@@ -38,7 +38,7 @@ public:
      * @brief createItemPainter
      * @return QNanoQuickItemPainter
      */
-    QNanoQuickItemPainter *createItemPainter() const override;
+    QNanoQuickItemPainter *createItemPainter() const override final;
 
     /**
      * @abstract This function is called whenever the mouse hovers over the component

@@ -31,6 +31,10 @@ PointState path::contains(const apoint &point) const {
     }
 }
 
+void path::push(char type, QPointF to, const QVariantMap &data, bool relative) {
+    mPathData.push_back({type, to, data, relative});
+}
+
 void path::vTo(qreal y, bool relative) {
     mPathData.push_back({invertTransformer().map(apoint{0.0f, y}), pd::vr{}, relative});
     expandBoundigBox(apoint{0.0f, y});
@@ -75,9 +79,13 @@ void path::quadTo(const apoint &control, const apoint &to, bool relative) {
     expandBoundigBox(to);
 }
 
+void path::shortQuadTo(const apoint &to, bool relative) {
+    mPathData.push_back({invertTransformer().map(to), pd::tquad{}, relative});
+}
+
 void path::cubicTo(const apoint &c1, const apoint &c2, const apoint &to, bool relative) {
     mPathData.push_back({
-        invertTransformer().map(to),
+                         invertTransformer().map(to),
         pd::cubic{invertTransformer().map(c1), invertTransformer().map(c2)},
         relative
     });
@@ -92,10 +100,15 @@ void path::cubicTo(const std::vector<double> &v, bool relative) {
     }
 }
 
+void path::shortCubicTo(const apoint &control, const apoint &to, bool relative) {
+    mPathData.push_back({invertTransformer().map(to), pd::scubic{control}, relative});
+    expandBoundigBox(to);
+}
+
 void path::arcTo(apoint to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool relative) {
     mPathData.push_back({
-        invertTransformer().map(to), pd::arc{radius, xrot, larc, sweep},
-        relative
+                         invertTransformer().map(to), pd::arc{radius, xrot, larc, sweep},
+                         relative
     });
     expandBoundigBox(to);
 }
@@ -110,5 +123,10 @@ void path::arcTo(const std::vector<double> &v, bool relative) {
 
 void path::close() {
     mPathData.push_back(pd::close{});
+}
+
+void path::setPathData(const std::vector<pathdata> &pathData) {
+    mPathData = pathData;
+    updateBoundingBox();
 }
 }

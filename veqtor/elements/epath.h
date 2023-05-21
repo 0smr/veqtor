@@ -27,8 +27,8 @@ public:
     void setData(const QString &d);
     void setAttributes(const QVariantMap &attrs) override;
 
-    Q_INVOKABLE size_t size() const { return pathShape()->size(); }
-    Q_INVOKABLE QVariantMap at(size_t index) const;
+    Q_INVOKABLE long long size() const { return pathShape()->size(); }
+    Q_INVOKABLE QVariantMap at(long long index) const;
     Q_INVOKABLE QVariantMap shift();
 
 public slots:
@@ -42,6 +42,10 @@ public slots:
     void arcTo(QPointF to, QSizeF radius, qreal xrot, bool larc, bool sweep, bool rel = false);
 
     void pop();
+    void clear() {
+        pathShape()->clear();
+        emit updated();
+    }
 
     /**
      * @abstract push new node to path.
@@ -71,10 +75,24 @@ public slots:
      *      - a: size{rx ry}, x-axis-rotation: `real`, large-arc-flag: `bool`, sweep-flag: `bool`
      * @endlist
      */
-    void set(size_t index, const QVariantMap &data) {
-        if(index < size()) return;
-        pathShape()->at(index) = shapes::pathdata(data);
-        emit updated();
+    void set(long long index, const QVariantMap &data) {
+        if(index < size()) {
+            pathShape()->at(index) = shapes::pathdata(data);
+            emit updated();
+        }
+    }
+    void set(long long index, const QPointF &to) {
+        if(index < size()) {
+            pathShape()->at(index).to = to;
+            emit updated();
+        }
+    }
+    void set(const QList<QPointF> &pointSeries, long long start = 0,
+             long long end = std::numeric_limits<long long>::max()) {
+        for(size_t i = start; i < std::min<long long>({size(), end, pointSeries.size()}); ++i) {
+            pathShape()->at(i).to = pointSeries[i];
+        }
+        if(start < size() && start < end) emit updated();
     }
 
 private:
