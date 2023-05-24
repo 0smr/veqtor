@@ -7,9 +7,10 @@ graphic::graphic(const shape_sptr &sh, QObject *parent, const QMap<QString, QStr
     : element{parent, tools::filter(attrs, mainAttrs())}, mShape(sh) {
     mShape->setTransform(&mTransformBuff);
     mShape->setPen(core::nanoPen{
-        svgTools::normColor(attrs["fill"]).rgba(),
+        svgTools::normColor(attrs.value("fill", "black")).rgba(),
         svgTools::normColor(attrs["stroke"]).rgba(),
-        svgTools::normSW(attrs["stroke-width"])
+        svgTools::normSW(attrs["stroke-width"]),
+        static_cast<float>(mOpacity)
     });
 }
 

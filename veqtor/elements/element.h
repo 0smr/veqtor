@@ -21,6 +21,7 @@ class element : public QObject {
     Q_PROPERTY(QList<QVariantMap> transform READ transform WRITE setTransform NOTIFY transformChanged)
     Q_PROPERTY(QQmlPropertyMap *attributes READ attributes NOTIFY attributesChanged)
     Q_PROPERTY(QPointF origin READ origin WRITE setOrigin NOTIFY originChanged)
+    Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
 public:
     enum Type {
         Unknown = 0x0,
@@ -95,8 +96,17 @@ public:
         emit updated();
     }
 
+    qreal opacity() const { return mOpacity; }
+    virtual void setOpacity(qreal _opacity) {
+        if(qFuzzyCompare(mOpacity, _opacity)) return;
+        mOpacity = _opacity;
+
+        emit opacityChanged();
+        emit updated();
+    }
+
 private:
-    static QStringList mainAttrs() { return {"id","class","style","tab-index"}; }
+    static QStringList mainAttrs() { return {"id","class","style","tab-index","opacity"}; }
 
 signals:
     void updated();
@@ -104,8 +114,11 @@ signals:
     void attributesChanged();
     void transformChanged();
     void originChanged();
+    void opacityChanged();
 
 protected:
+    qreal mOpacity;
+
     QString mId;
     QStringList mClass;
     QHash<QString, QString> mStyle;

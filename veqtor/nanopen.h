@@ -12,11 +12,11 @@ namespace veqtor::core {
  * @brief The nanoPen struct
  */
 struct nanoPen {
-    nanoPen(QRgb fill = 0x0, QRgb stroke = 0x0, float width = 1.0,
+    nanoPen(QRgb fill = 0x0, QRgb stroke = 0x0, float width = 1.0, float opacity = 1.0,
             QNanoPainter::LineCap cap = QNanoPainter::CAP_ROUND,
             QNanoPainter::LineJoin join = QNanoPainter::JOIN_ROUND)
         : mWinding(QNanoPainter::WINDING_CW), mCap(cap), mJoin(join),
-          mWidth(width), mFill(fill), mStroke(stroke) {}
+          mWidth(width), mFill(fill), mOpacity(opacity), mStroke(stroke) {}
     nanoPen(QColor fill, QColor stroke, float width)
         : nanoPen(fill.rgba(), stroke.rgba(), width) {}
 
@@ -26,6 +26,7 @@ struct nanoPen {
          */
         painter->setFillStyle(mFill);
         painter->setStrokeStyle(mStroke);
+        painter->setGlobalAlpha(mOpacity);
         painter->setMiterLimit(mMiter);
         painter->setLineWidth(mWidth);
         painter->setLineCap(mCap);
@@ -93,6 +94,7 @@ struct nanoPen {
 
     float mWidth = 1.0f;
     float mMiter = 10.0f;
+    float mOpacity = 1.0f;
     QRgb mFill = 0x00000000; /// #AARRGGBB (Qt::transparent)
     QRgb mStroke = 0x00000000; /// #AARRGGBB (Qt::transparent)
 

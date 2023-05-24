@@ -10,9 +10,10 @@ using utils::tools;
 using utils::cssTools;
 
 element::element(QObject *parent, QMap<QString, QString> attrs)
-    : QObject{parent}, mId(attrs["id"]), mClass{attrs["class"].split(" ")},
-    mStyle{cssTools::cssStyleParser(attrs["style"])}, mTabIndex{attrs["tab-index"].toLongLong()} {
-
+    : QObject{parent}, mOpacity{attrs.value("opacity", "1.0").toFloat()},
+      mId(attrs["id"]), mClass{attrs["class"].split(" ")},
+      mStyle{cssTools::cssStyleParser(attrs["style"])},
+      mTabIndex{attrs["tab-index"].toLongLong()} {
     auto map = tools::filter(attrs, mainAttrs());
     for(const auto &key: map) {
         mAttributes.insert(key, attrs[key]);
@@ -36,7 +37,8 @@ void element::setAttribute(const QString &key, const QString &value) {
 void element::setAttributes(const QVariantMap &attrs) {
     /// TODO: Use a better method.
     if(attrs.contains("class")) mClass = attrs["class"].toStringList();
-    if(attrs.contains("class")) mTabIndex = attrs["class"].toLongLong();
+    if(attrs.contains("tab-index")) mTabIndex = attrs["tab-index"].toLongLong();
+    if(attrs.contains("opacity")) mOpacity = attrs["opacity"].toFloat();
     if(attrs.contains("style")) {
         mStyle = utils::cssTools::cssStyleParser(attrs["style"].toString());
     }

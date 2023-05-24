@@ -40,6 +40,10 @@ public:
 
     virtual Type type() const override;
     virtual bool contains(const QPointF& point) const override;
+    void setOpacity(qreal _opacity) override {
+        mShape->pen().mOpacity = _opacity;
+        element::setOpacity(_opacity);
+    }
 
     QColor fill() const;
     QColor stroke() const;
