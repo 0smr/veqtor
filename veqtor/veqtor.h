@@ -78,7 +78,7 @@ private slots:
     void adjustSize();
     void adjustResponsive();
     void updateDocument(const QString &newId, const QString &oldId) {
-        /// This feature modifies the main document in the event that the ID of any element is altered.
+        /// This slot modifies the main document in the event that the ID of any element is altered.
         auto sender = qobject_cast<elements::element *>(QObject::sender());
 
         mDocument.remove(oldId);

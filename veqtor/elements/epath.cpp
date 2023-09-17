@@ -53,7 +53,8 @@ QVariantMap epath::shift() {
 }
 
 void epath::close() {
-    pathShape()->close();
+	pathShape()->close();
+	emit updated();
 }
 
 void epath::vTo(qreal y, bool rel) {

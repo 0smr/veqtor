@@ -1,0 +1,10 @@
+module veqtor.qml
+typeinfo veqtor.qml.qmltypes
+
+
+singleton QmlVeqtor 0.1 QmlVeqtor.qml
+
+LineSeries  0.1 LineSeries.qml
+PlotCross   0.1 PlotCross.qml
+List        0.1 List.qml
+Range       0.1 Range.qml

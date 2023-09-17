@@ -35,7 +35,7 @@ void veqtor::hoverMoveEvent(QHoverEvent* event) {
     using elements::element;
 
     if(mRoot) {
-#if QT_VERSION >= 0x060000
+#if QT_VERSION_MAJOR == 6
         QPointF mousePosition = event->position();
 #else
         QPointF mousePosition = event->posF();
@@ -199,7 +199,7 @@ void veqtor::updateElementAttributes() {
     QByteArray name = metaMethod.name().chopped(7);
     QVariant prop = property(name.constData());
 
-#if QT_VERSION >= 0x060000
+#if QT_VERSION_MAJOR == 6
     bool isUserType = prop.typeId() == QMetaType::User;
 #else
     bool isUserType = prop.type() == QVariant::UserType;
