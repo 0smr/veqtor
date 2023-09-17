@@ -46,12 +46,12 @@ void path::hTo(qreal x, bool relative) {
 }
 
 void path::moveTo(std::vector<double> points, bool relative) {
-    // `points.size() &~ 1` will round the vector size to a multiple of 2.
-    points.resize(std::max(2ull, points.size() &~ 1), 0);
-    moveTo(apoint{points[0], points[1]}, relative);
-    for(size_t i{2}; i < points.size() - 1; i+=2) {
-        lineTo(apoint{points[i], points[i+1]}, relative);
-    }
+	// `points.size() &~ 1` will round the vector size to a multiple of 2.
+	points.resize(std::max<size_t>(2ull, points.size() &~ 1), 0);
+	moveTo(apoint{points[0], points[1]}, relative);
+	for(size_t i{2}; i < points.size() - 1; i+=2) {
+		lineTo(apoint{points[i], points[i+1]}, relative);
+	}
 }
 
 void path::moveTo(apoint to, bool relative) {

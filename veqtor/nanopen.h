@@ -16,7 +16,7 @@ struct nanoPen {
             QNanoPainter::LineCap cap = QNanoPainter::CAP_ROUND,
             QNanoPainter::LineJoin join = QNanoPainter::JOIN_ROUND)
         : mWinding(QNanoPainter::WINDING_CW), mCap(cap), mJoin(join),
-          mWidth(width), mFill(fill), mOpacity(opacity), mStroke(stroke) {}
+          mWidth(width), mOpacity(opacity), mFill(fill), mStroke(stroke) {}
     nanoPen(QColor fill, QColor stroke, float width)
         : nanoPen(fill.rgba(), stroke.rgba(), width) {}
 

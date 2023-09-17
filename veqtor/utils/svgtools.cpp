@@ -36,8 +36,8 @@ std::vector<shapes::pathdata> svgTools::svgPathParser(const std::string &svgPath
         bool relative = std::islower(m[0]);
         char type = std::tolower(m[0]);
 
-        /// @brief If the type is `moveTo` or `lineTo`, resize the vector to at least 2; otherwise, resize it to 6.
-        v.resize(std::max(v.size(), type == 'm' || type == 'l' ? 2ull : 7ull));
+		/// @brief If the type is `moveTo` or `lineTo`, resize the vector to at least 2; otherwise, resize it to 6.
+		v.resize(std::max<size_t>(v.size(), type == 'm' || type == 'l' ? 2ull : 7ull));
 
         switch (type) {
             case 'h': path.hTo(v[0], relative); break;
