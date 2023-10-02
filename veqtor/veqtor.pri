@@ -2,7 +2,7 @@ QML_IMPORT_PATH += $${PWD}/..
 QML2_IMPORT_PATH += $${PWD}/..
 QML_DESIGNER_IMPORT_PATH += $${PWD}/..
 
-RESOURCES += $${PWD}/veqtor.qrc
+RESOURCES += $${PWD}/qml/veqtor.qrc
 
 include($$PWD/../qnanopainter/libqnanopainter/include.pri)
 

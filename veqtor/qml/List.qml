@@ -23,11 +23,21 @@ QtObject {
     function map(callback) { return priv.rawdata.map(callback); }
 
     /// getters
-    function at(index) { return priv.rawdata[index]; }
+    function at(index: int) { return priv.rawdata[index]; }
     function length() { return priv.rawdata.length; }
     function count() { return priv.rawdata.length; }
+    function empty() { return priv.rawdata.length <= 0; }
     function data() { return priv.rawdata; }
-    function slice(start, end = -1) { return priv.rawdata.slice(start, end); }
+
+    function slice(start, end = -1) {
+        return priv.rawdata.slice(start, end);
+    }
+
+    function last() {
+        return !empty() ? priv.rawdata[count() - 1] :
+                          undefined;
+    }
+
     function shift(): real {
         const result = priv.rawdata.shift();
         root.dataShifted();
