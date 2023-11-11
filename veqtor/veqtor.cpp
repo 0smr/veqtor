@@ -54,15 +54,16 @@ void veqtor::hoverMoveEvent(QHoverEvent* event) {
 
 void veqtor::componentComplete() {
     /**
-     * @abstract In this section, we connect all QML-side declared properties to the "propertyChanged()" slot.
-     *  The signal names are a mix of the property name and the "Changed()" string.
+     * @abstract In this section, we connect all QML-side declared properties to the "updateElementAttributes()" slot.
+     *  The signal names are a mix of the signal code,
+     *   the property name and the "Changed()" string. (In example: for `property var pathId`, signal name is `2pathIdChanged()`)
      */
     int num = metaObject()->propertyCount();
     for(int i = metaObject()->propertyOffset() + 1; i < num; ++i) {
         QMetaProperty mp = metaObject()->property(i);
         if(mp.isWritable() && !mp.isConstant()) {
             QByteArray signalName = QT_STRINGIFY(QSIGNAL_CODE) + QByteArray(mp.name()) + "Changed()";
-            connect(this, signalName.constData(), this, SLOT(propertyChanged()));
+            connect(this, signalName.constData(), this, SLOT(updateElementAttributes()));
         }
     }
 
@@ -199,7 +200,7 @@ void veqtor::updateElementAttributes() {
     QByteArray name = metaMethod.name().chopped(7);
     QVariant prop = property(name.constData());
 
-#if QT_VERSION_MAJOR == 6
+#if QT_VERSION_MAJOR >= 6
     bool isUserType = prop.typeId() == QMetaType::User;
 #else
     bool isUserType = prop.type() == QVariant::UserType;
